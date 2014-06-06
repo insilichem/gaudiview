@@ -95,15 +95,20 @@ class GaudiViewDialog(ModelessDialog):
 		self.table.redrawTable()
 
 	def updateDisplayedMolecules(self):
-		chimera.openModels.remove([m_ for (p,m) in self.molecules.items() 
-						for m_ in m if p not in self.selected_molecules])
-		chimera.openModels.add([m_  for m in self.selected_molecules for m_ in self.molecules[m]])
+		chimera.openModels.remove([m for m in 
+						chimera.openModels.list(modelTypes=[chimera.Molecule])])
+		if self.selected_molecules:
+			chimera.openModels.add([m_ for m in self.selected_molecules 
+						for m_ in self.molecules[m]])
 
 	def updateSelectedMolecules(self):
 		self.selected_molecules = []
 		for row in self.table.multiplerowlist:
-			molpath = self.table.model.data[self.table.model.getRecName(row)]['Filename']
-			self.selected_molecules.append(os.path.join(self.basedir,molpath))
+			try: 
+				molpath = self.table.model.data[self.table.model.getRecName(row)]['Filename']
+				self.selected_molecules.append(os.path.join(self.basedir,molpath))
+			except IndexError: #click out of boundaries
+				pass
 	
 	def _sel_changed(self, trigger, data, f):
 		self.updateSelectedMolecules()

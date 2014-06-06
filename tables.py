@@ -30,6 +30,7 @@ class Table(TableCanvas):
 
 	def do_bindings(self):
 		self.bind("<Button-1>",self.handle_left_click)
+		self.bind("<ButtonRelease-1>", self.handle_left_release)
 		self.bind("<MouseWheel>", self.mouse_wheel)
 		self.bind('<Button-4>', self.mouse_wheel)
 		self.bind('<Button-5>', self.mouse_wheel)
@@ -39,6 +40,8 @@ class Table(TableCanvas):
 
 	def handle_left_click(self, event):
 		self.clearSelected()
+		self.delete('rowrect')
+
 		row = self.get_row_clicked(event)
 		col = self.get_col_clicked(event)
 		self.focus_set()
@@ -53,8 +56,11 @@ class Table(TableCanvas):
 		if 0 <= row < self.rows and 0 <= col < self.cols:
 			self.setSelectedRow(row)
 			self.drawSelectedRow()
-			self.gaudiparent.triggers.activateTrigger(gui.GaudiViewDialog.SELECTION_CHANGED, None)
 
+		
+	def handle_left_release(self,event):
+		self.endrow = self.get_row_clicked(event)
+		self.gaudiparent.triggers.activateTrigger(gui.GaudiViewDialog.SELECTION_CHANGED, None)
 
 	def createTableFrame(self, callback=None):
 		self.tablerowheader = RowHeader(self.parentframe, self, width=self.rowheaderwidth)
@@ -117,7 +123,34 @@ class Table(TableCanvas):
 		pass
 	def drawMultipleCells(self):
 		pass
-		
+	
+	def drawSelectedRow(self, row=None):
+		"""Draw the highlight rect for the currently selected row"""
+		if not row:
+			row = self.currentrow
+			self.delete('rowrect')
+
+		x1,y1,x2,y2 = self.getCellCoords(row,0)
+		x2 = self.tablewidth
+		rect = self.create_rectangle(x1,y1,x2,y2,
+								  fill=self.rowselectedcolor,
+								  outline=self.rowselectedcolor,
+								  tag='rowrect')
+		self.lower('rowrect')
+		self.lower('fillrect')
+		self.tablerowheader.drawSelectedRows(self.currentrow)
+	
+	def drawMultipleRows(self, rowlist):
+		"""Draw more than one row selection"""
+		self.delete('multiplesel')
+		for r in rowlist:
+			if r not in self.visiblerows or r > self.rows-1:
+				continue
+			self.drawSelectedRow(r)
+		self.lower('multiplesel')
+		self.lower('fillrect')
+		return
+
 class Headers(ColumnHeader):
 	def __init__(self, parent=None, table=None):
 		Canvas.__init__(self, parent, bg='gray25', width=500, height=20)
