@@ -67,8 +67,8 @@ class GaudiViewDialog(ModelessDialog):
 		# Fill data in and create table
 		self.model = tables.TableModel()
 		self.model.importDict(self.data)
-		self.table = tables.Table(self.tframe, self.model,
-							editable=False, rowheaderwidth=0, gaudiparent=self)
+		self.table = tables.Table(self.tframe, self.model, editable=False, 
+								gaudiparent=self)
 		self.table.createTableFrame()
 		self.table.createFilteringBar(parent)
 		self.table.autoResizeColumns()
@@ -86,7 +86,7 @@ class GaudiViewDialog(ModelessDialog):
 		i = readlines.index('>>GAUDI.results')
 		self.headers = readlines[i+1].split()
 		parsed = {}
-		for j, row in enumerate(readlines[i+3:]):
+		for j, row in enumerate(readlines[i+2:]):
 			parsed[j] = OrderedDict((k,v) for (k,v) in zip(self.headers, row.split()))
 		return parsed
 
@@ -95,7 +95,7 @@ class GaudiViewDialog(ModelessDialog):
 		mols = {}
 		for p in paths:
 			mols[p] = chimera.openModels.open(p)
-			chimera.openModels.remove(mols[p])
+		chimera.openModels.remove([ mols[p][0] for p in paths[1:] ])
 		try:
 			self.protein = chimera.openModels.open(self.proteinpath)[0]
 		except:

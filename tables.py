@@ -18,7 +18,7 @@ class Table(TableCanvas):
 		self.x_start=0
 		self.y_start=1
 		self.linewidth=1.0
-		self.rowheaderwidth=40
+		self.rowheaderwidth=0
 		self.showkeynamesinheader=False
 		self.thefont = ('Arial',12)
 		self.cellbackgr = '#EEEEEE'
