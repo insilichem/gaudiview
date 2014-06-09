@@ -59,26 +59,6 @@ class GaudiViewDialog(ModelessDialog):
 		ModelessDialog.__init__(self)
 		chimera.extension.manager.registerInstance(self)
 
-	def parseGaudi(self, path):
-		from collections import OrderedDict
-		f = open(path, 'r')
-		readlines = f.read().splitlines()
-		self.protein = readlines[readlines.index('>>GAUDI.protein')+1]
-		i = readlines.index('>>GAUDI.results')
-		self.headers = readlines[i+1].split()
-		parsed = {}
-		for j, row in enumerate(readlines[i+3:]):
-			parsed[j] = OrderedDict((k,v) for (k,v) in zip(self.headers, row.split()))
-		return parsed
-
-	def parseMolPaths(self, data):
-		paths = [ os.path.join(self.basedir,r['Filename']) for r in data.values() ]
-		mols = {}
-		for p in paths:
-			mols[p] = chimera.openModels.open(p)
-			chimera.openModels.remove(mols[p])
-		return mols
-
 	def fillInUI(self, parent):
 		# Create main window
 		self.tframe = Tkinter.Frame(parent)
@@ -94,9 +74,38 @@ class GaudiViewDialog(ModelessDialog):
 		self.table.autoResizeColumns()
 		self.table.redrawTable()
 
+	## Parsing and click events
+	def parseGaudi(self, path):
+		from collections import OrderedDict
+		f = open(path, 'r')
+		readlines = f.read().splitlines()
+		try:
+			self.proteinpath = readlines[readlines.index('>>GAUDI.protein')+1]
+		except:
+			self.proteinpath = ''
+		i = readlines.index('>>GAUDI.results')
+		self.headers = readlines[i+1].split()
+		parsed = {}
+		for j, row in enumerate(readlines[i+3:]):
+			parsed[j] = OrderedDict((k,v) for (k,v) in zip(self.headers, row.split()))
+		return parsed
+
+	def parseMolPaths(self, data):
+		paths = [ os.path.join(self.basedir,r['Filename']) for r in data.values() ]
+		mols = {}
+		for p in paths:
+			mols[p] = chimera.openModels.open(p)
+			chimera.openModels.remove(mols[p])
+		try:
+			self.protein = chimera.openModels.open(self.proteinpath)[0]
+		except:
+			self.protein = None
+		return mols
+
 	def updateDisplayedMolecules(self):
-		chimera.openModels.remove([m for m in 
-						chimera.openModels.list(modelTypes=[chimera.Molecule])])
+		chimera.openModels.remove([ m for m in 
+						chimera.openModels.list(modelTypes=[chimera.Molecule])
+						if m != self.protein ])
 		if self.selected_molecules:
 			chimera.openModels.add([m_ for m in self.selected_molecules 
 						for m_ in self.molecules[m]])
