@@ -107,8 +107,9 @@ class GaudiViewDialog(ModelessDialog):
 		paths = [ os.path.join(self.basedir,r['Filename']) for r in data.values() ]
 		mols = {}
 		for p in paths:
-			mols[p] = chimera.openModels.open(p)
-		chimera.openModels.remove([ mols[p][0] for p in paths[1:] ])
+			mols[p] = chimera.openModels.open(p, type='Mol2', shareXform=True)
+		# chimera.openModels.remove([ mols[p][0] for p in paths[1:] ])
+		[self.hideMolecule(mols[p][0]) for p in paths[1:] ]
 		try:
 			self.protein = chimera.openModels.open(self.proteinpath)[0]
 		except:
@@ -116,12 +117,16 @@ class GaudiViewDialog(ModelessDialog):
 		return mols
 
 	def updateDisplayedMolecules(self):
-		chimera.openModels.remove([ m for m in 
-						chimera.openModels.list(modelTypes=[chimera.Molecule])
-						if m != self.protein ])
+		# chimera.openModels.remove([ m for m in 
+		# 				chimera.openModels.list(modelTypes=[chimera.Molecule])
+		# 				if m != self.protein ])
+		[ self.hideMolecule(m) for m in chimera.openModels.list(modelTypes=[chimera.Molecule])
+						if m != self.protein ]
 		if self.selected_molecules:
-			chimera.openModels.add([m_ for m in self.selected_molecules 
-						for m_ in self.molecules[m]])
+			# chimera.openModels.add([m_ for m in self.selected_molecules 
+			# 			for m_ in self.molecules[m]], shareXform=True)
+			[self.showMolecule(m_) for m in self.selected_molecules 
+						for m_ in self.molecules[m]]
 
 	def updateSelectedMolecules(self):
 		self.selected_molecules = []
@@ -132,6 +137,11 @@ class GaudiViewDialog(ModelessDialog):
 			except IndexError: #click out of boundaries
 				pass
 	
+	def hideMolecule(self, m):
+		m.display = 0
+	def showMolecule(self, m):
+		m.display = 1
+
 	def _sel_changed(self, trigger, data, f):
 		self.updateSelectedMolecules()
 		self.updateDisplayedMolecules()
