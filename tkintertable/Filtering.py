@@ -90,7 +90,7 @@ def doFiltering(searchfunc, filters=None):
        filters is a list of tuples of the form (key,value,operator,bool)
        returns: found record keys"""
 
-    if filters == None:
+    if not filters:
         return
     F = filters
     sets = []

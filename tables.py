@@ -105,9 +105,27 @@ class Table(TableCanvas):
 		if fields == None:
 			fields = self.model.columnNames
 
-		self.filterframe = Filters(parent, fields, self.doFilter)
+		self.filterframe = Filters(parent, fields, self.doFilter, self.showAll)
 		self.filterframe.pack()
 		return parent
+
+	def doFilter(self, event=None):
+		"""Filter the table display by some column values.
+		We simply pass the model search function to the the filtering
+		class and that handles everything else.
+		See filtering frame class for how searching is done.
+		"""
+		if self.model==None:
+			return
+		names = self.filterframe.doFiltering(searchfunc=self.model.filterBy)
+		if not names:
+			self.filtered = False
+			return
+		#create a list of filtered recs
+		self.model.filteredrecs = names
+		self.filtered = True
+		self.redrawTable()
+		return
 
 	def setSelectedRow(self, row):
 		"""Set currently selected row and reset multiple row list"""
@@ -237,6 +255,8 @@ class Filters(FilterFrame):
 		self.gobutton.grid(row=0,column=0,sticky='news',padx=2,pady=2)
 		addbutton=Button(self,text='+Add', command=self.addFilterBar)
 		addbutton.grid(row=0,column=1,sticky='news',padx=2,pady=2)
+		self.cbutton=Button(self,text='Reset', command=self.resetFiltering, state=DISABLED)
+		self.cbutton.grid(row=0,column=2,sticky='news',padx=2,pady=2)
 		self.resultsvar=IntVar()
 		self.results = Label(self,text='Results:', state=DISABLED, 
 							disabledforeground=parent.cget('bg'))
@@ -252,11 +272,17 @@ class Filters(FilterFrame):
 		self.filters.append(f)
 		f.grid(row=index+1,column=0,columnspan=5,sticky='news',padx=2,pady=2)
 		self.gobutton.config(state=NORMAL)
+		self.cbutton.config(state=NORMAL)
 
 	def updateResults(self, i):
 		self.resultsvar.set(i)
 		self.results.config(state=NORMAL)
 		self.resultsnum.config(state=NORMAL)
+
+	def resetFiltering(self):
+		for f in self.filters:
+			f.close()
+		self.closecallback()
 
 class FilterBar_(FilterBar):
 	"""Class providing filter widgets"""
@@ -304,6 +330,7 @@ class FilterBar_(FilterBar):
 		self.parent.filters.remove(self)
 		if not self.parent.filters:
 			self.parent.gobutton.config(state=DISABLED)
+			self.parent.cbutton.config(state=DISABLED)
 			self.parent.results.config(state=DISABLED)
 			self.parent.resultsnum.config(state=DISABLED)
 		self.destroy()
