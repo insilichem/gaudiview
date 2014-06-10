@@ -74,6 +74,19 @@ class GaudiViewDialog(ModelessDialog):
 		self.table.autoResizeColumns()
 		self.table.redrawTable()
 
+	def Apply(self):
+		chimera.openModels.close([ m_ for p in self.molecules 
+			for m_ in self.molecules[p] if p not in self.selected_molecules ])
+
+	def OK(self):
+		self.Apply()
+		self.destroy()
+
+	def Close(self):
+		chimera.openModels.close([mol for mol in chimera.openModels.list() 
+			if mol in [ m_ for m in self.molecules.values() for m_ in m ]])
+		self.destroy()
+
 	## Parsing and click events
 	def parseGaudi(self, path):
 		from collections import OrderedDict
