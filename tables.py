@@ -36,6 +36,8 @@ class Table(TableCanvas):
 		self.bind('<Button-5>', self.mouse_wheel)
 		self.bind("<Control-Button-1>", self.handle_left_ctrl_click)
 		self.bind("<Shift-Button-1>", self.handle_left_shift_click)
+		self.bind("<Up>", self.handle_arrow_keys)
+		self.bind("<Down>", self.handle_arrow_keys)
 		self.focus_set()
 
 	def handle_left_click(self, event):
@@ -56,10 +58,31 @@ class Table(TableCanvas):
 		if 0 <= row < self.rows and 0 <= col < self.cols:
 			self.setSelectedRow(row)
 			self.drawSelectedRow()
-
 		
 	def handle_left_release(self,event):
 		self.endrow = self.get_row_clicked(event)
+		self.gaudiparent.triggers.activateTrigger(gui.GaudiViewDialog.SELECTION_CHANGED, None)
+
+	def handle_arrow_keys(self, event):
+		"""Handle arrow keys press"""
+		x,y = self.getCanvasPos(self.currentrow, 0)
+		if x == None:
+			return
+		if event.keysym == 'Up':
+			if self.currentrow == 0:
+				return
+			else:
+				self.currentrow  = self.currentrow -1
+		elif event.keysym == 'Down':
+			if self.currentrow >= self.rows-1:
+				return
+			else:
+				self.currentrow  = self.currentrow +1
+		
+		self.multiplerowlist=[]
+		self.multiplerowlist.append(self.currentrow)
+		self.setSelectedRow(self.currentrow)
+		self.drawSelectedRow()
 		self.gaudiparent.triggers.activateTrigger(gui.GaudiViewDialog.SELECTION_CHANGED, None)
 
 	def createTableFrame(self, callback=None):
