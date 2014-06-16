@@ -88,6 +88,13 @@ class GaudiViewDialog(ModelessDialog):
 		self.destroy()
 
 	## Parsing and click events
+	def openMolecule(self, *paths):
+		for p in paths:
+			try:
+				[self.showMolecule(m) for m in self.molecules[p]]
+			except KeyError:
+				self.molecules[p] = chimera.openModels.open(p)
+
 	def parseGaudi(self, path):
 		from collections import OrderedDict
 		f = open(path, 'r')
@@ -104,12 +111,11 @@ class GaudiViewDialog(ModelessDialog):
 		return parsed
 
 	def parseMolPaths(self, data):
-		paths = [ os.path.join(self.basedir,r['Filename']) for r in data.values() ]
+		paths = [ os.path.join(self.basedir,r['Filename']) for r in data.values()[:10] ]
 		mols = {}
 		for p in paths:
 			mols[p] = chimera.openModels.open(p, type='Mol2', shareXform=True)
-		# chimera.openModels.remove([ mols[p][0] for p in paths[1:] ])
-		[self.hideMolecule(mols[p][0]) for p in paths[1:] ]
+		[self.hideMolecule(m) for p in paths[1:] for m in mols[p] ]
 		try:
 			self.protein = chimera.openModels.open(self.proteinpath)[0]
 		except:
@@ -117,16 +123,10 @@ class GaudiViewDialog(ModelessDialog):
 		return mols
 
 	def updateDisplayedMolecules(self):
-		# chimera.openModels.remove([ m for m in 
-		# 				chimera.openModels.list(modelTypes=[chimera.Molecule])
-		# 				if m != self.protein ])
 		[ self.hideMolecule(m) for m in chimera.openModels.list(modelTypes=[chimera.Molecule])
 						if m != self.protein ]
 		if self.selected_molecules:
-			# chimera.openModels.add([m_ for m in self.selected_molecules 
-			# 			for m_ in self.molecules[m]], shareXform=True)
-			[self.showMolecule(m_) for m in self.selected_molecules 
-						for m_ in self.molecules[m]]
+			[self.openMolecule(p) for p in self.selected_molecules]
 
 	def updateSelectedMolecules(self):
 		self.selected_molecules = []
