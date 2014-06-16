@@ -309,7 +309,7 @@ class Filters(FilterFrame):
 
 class FilterBar_(FilterBar):
 	"""Class providing filter widgets"""
-	operators = ['=','!=','>','<', '>=', '<=']
+	operators = ['=','!=','>','<', '>=', '<=', 'contains']
 	booleanops = ['AND','OR','NOT']
 	def __init__(self, parent, index, fields):
 		Frame.__init__(self, parent)
