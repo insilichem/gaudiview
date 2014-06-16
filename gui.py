@@ -38,6 +38,7 @@ class GaudiViewDialog(ModelessDialog):
 	default = None
 	help = "https://bitbucket.org/jrgp/gaudiview"
 	SELECTION_CHANGED = "GaudiViewSelectionChanged"
+	DBL_CLICK = "GaudiViewDoubleClick"
 	EXIT = "GaudiViewExited"
 
 	def __init__(self, path, format, *args, **kw):

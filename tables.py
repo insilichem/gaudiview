@@ -30,6 +30,7 @@ class Table(TableCanvas):
 
 	def do_bindings(self):
 		self.bind("<Button-1>",self.handle_left_click)
+		self.bind("<Double-Button-1>",self.handle_double_click)
 		self.bind("<ButtonRelease-1>", self.handle_left_release)
 		self.bind("<MouseWheel>", self.mouse_wheel)
 		self.bind('<Button-4>', self.mouse_wheel)
@@ -84,6 +85,14 @@ class Table(TableCanvas):
 		self.setSelectedRow(self.currentrow)
 		self.drawSelectedRow()
 		self.gaudiparent.triggers.activateTrigger(gui.GaudiViewDialog.SELECTION_CHANGED, None)
+
+	def handle_double_click(self, event):
+		"""Do double click stuff. Selected row/cols will already have
+		   been set with single click binding"""
+
+		row = self.get_row_clicked(event)
+		self.gaudiparent.triggers.activateTrigger(gui.GaudiViewDialog.DBL_CLICK, row)
+		
 
 	def createTableFrame(self, callback=None):
 		self.tablerowheader = RowHeader(self.parentframe, self, width=self.rowheaderwidth)
