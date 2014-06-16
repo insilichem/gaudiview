@@ -6,6 +6,7 @@ from chimera.baseDialog import ModelessDialog
 from chimera import tkgui, triggerSet
 import Tkinter, Pmw, Tix
 import tables
+import yaml
 
 ui = None
 def showUI(callback=None):
@@ -45,19 +46,29 @@ class GaudiViewDialog(ModelessDialog):
 		self.format = format
 
 		# DATA init
-		self.data = self.parseGaudi(self.path)
-		self.molecules = self.parseMolPaths(self.data)
+		self.parse()
+		self.molecules = {}
+		self.displayed_molecules = []
 		self.selected_molecules = []
 
 		# Triggers
 		self.triggers = triggerSet.TriggerSet()
 		self.triggers.addTrigger(self.SELECTION_CHANGED)
 		self.triggers.addHandler(self.SELECTION_CHANGED, self._sel_changed, None)
-
+		self.triggers.addTrigger(self.DBL_CLICK)
+		self.triggers.addHandler(self.DBL_CLICK, self._update_protein, None)
+		
 		# GUI init
 		self.title = 'GaudiView - {}'.format(path)
 		ModelessDialog.__init__(self)
 		chimera.extension.manager.registerInstance(self)
+
+		# Open protein
+		try:
+			self.protein = chimera.openModels.open(self.input['GAUDI.protein'])
+		except (KeyError, IOError):
+			self.protein = None
+
 
 	def fillInUI(self, parent):
 		# Create main window
@@ -88,47 +99,31 @@ class GaudiViewDialog(ModelessDialog):
 		self.destroy()
 
 	## Parsing and click events
-	def openMolecule(self, *paths):
+	def open_molecule_path(self, *paths):
 		for p in paths:
 			try:
-				[self.showMolecule(m) for m in self.molecules[p]]
+				self.show_molecules(*self.molecules[p])
 			except KeyError:
-				self.molecules[p] = chimera.openModels.open(p)
+				self.molecules[p] = chimera.openModels.open(p, shareXform=True)
 
-	def parseGaudi(self, path):
+	def parse(self):
 		from collections import OrderedDict
-		f = open(path, 'r')
-		readlines = f.read().splitlines()
-		try:
-			self.proteinpath = readlines[readlines.index('>>GAUDI.protein')+1]
-		except:
-			self.proteinpath = ''
-		i = readlines.index('>>GAUDI.results')
-		self.headers = readlines[i+1].split()
-		parsed = {}
-		for j, row in enumerate(readlines[i+2:]):
+		with open(self.path) as f:
+			self.input = yaml.load(f)
+		self.headers = self.input['GAUDI.results'][0].split()
+		parsed = OrderedDict()
+		for j, row in enumerate(self.input['GAUDI.results'][1:]):
 			parsed[j] = OrderedDict((k,v) for (k,v) in zip(self.headers, row.split()))
-		return parsed
+		self.data = parsed
 
-	def parseMolPaths(self, data):
-		paths = [ os.path.join(self.basedir,r['Filename']) for r in data.values()[:10] ]
-		mols = {}
-		for p in paths:
-			mols[p] = chimera.openModels.open(p, type='Mol2', shareXform=True)
-		[self.hideMolecule(m) for p in paths[1:] for m in mols[p] ]
-		try:
-			self.protein = chimera.openModels.open(self.proteinpath)[0]
-		except:
-			self.protein = None
-		return mols
+	def update_displayed_molecules(self):
+		self.hide_molecules(*self.displayed_molecules)
 
-	def updateDisplayedMolecules(self):
-		[ self.hideMolecule(m) for m in chimera.openModels.list(modelTypes=[chimera.Molecule])
-						if m != self.protein ]
-		if self.selected_molecules:
-			[self.openMolecule(p) for p in self.selected_molecules]
+		self.open_molecule_path(*self.selected_molecules)
+		self.displayed_molecules.extend([m for p in self.selected_molecules
+			for m in self.molecules[p]])
 
-	def updateSelectedMolecules(self):
+	def update_selected_molecules(self):
 		self.selected_molecules = []
 		for row in self.table.multiplerowlist:
 			try: 
@@ -136,12 +131,20 @@ class GaudiViewDialog(ModelessDialog):
 				self.selected_molecules.append(os.path.join(self.basedir,molpath))
 			except IndexError: #click out of boundaries
 				pass
-	
-	def hideMolecule(self, m):
-		m.display = 0
-	def showMolecule(self, m):
-		m.display = 1
+
+	def hide_molecules(self, *mols):
+		for m in mols:
+			m.display = 0
+	def show_molecules(self, *mols):
+		for m in mols:
+			m.display = 1
 
 	def _sel_changed(self, trigger, data, f):
-		self.updateSelectedMolecules()
-		self.updateDisplayedMolecules()
+		self.update_selected_molecules()
+		self.update_displayed_molecules()
+
+	def _update_protein(self, trigger, data, r):
+		path =  self.table.model.data[self.table.model.getRecName(r)]['Filename']
+		print path
+		# protein_info = self.input['GAUDI.rotamers'][path]
+		#
