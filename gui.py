@@ -35,7 +35,7 @@ def _browse(okayed, dialog):
 class GaudiViewDialog(ModelessDialog):
 	buttons = ("OK", "Close")
 	default = None
-	help = "http://www.google.es"
+	help = "https://bitbucket.org/jrgp/gaudiview"
 	SELECTION_CHANGED = "GaudiViewSelectionChanged"
 	EXIT = "GaudiViewExited"
 
