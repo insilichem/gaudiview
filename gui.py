@@ -4,7 +4,7 @@ import chimera, os.path
 import SimpleSession
 from chimera.baseDialog import ModelessDialog
 from chimera import tkgui, triggerSet
-import Tkinter, Pmw, Tix
+import Tkinter, Pmw, Tix, Rotamers
 import tables
 import yaml
 
@@ -47,6 +47,7 @@ class GaudiViewDialog(ModelessDialog):
 		self.format = format
 
 		# DATA init
+		self.input, self.data = None, None
 		self.parse()
 		self.molecules = {}
 		self.displayed_molecules = []
@@ -145,7 +146,37 @@ class GaudiViewDialog(ModelessDialog):
 		self.update_displayed_molecules()
 
 	def _update_protein(self, trigger, data, r):
-		path =  self.table.model.data[self.table.model.getRecName(r)]['Filename']
-		print path
-		# protein_info = self.input['GAUDI.rotamers'][path]
-		#
+		if not self.protein:
+			return
+		molpath =  self.table.model.data[self.table.model.getRecName(r)]['Filename']
+		molecule = self.molecules[os.path.join(self.basedir,molpath)][0]
+		mol2data = molecule.mol2data
+		try: 
+			start = mol2data.index('GAUDI.rotamers')
+			end = mol2data.index('/GAUDI.rotamers')
+		except ValueError:
+			print "Sorry, no rotamer info available in mol2"
+		else:
+			rotamers = mol2data[start+1:end]
+			chimera.runCommand('~show ' + ' '.join(['#{}'.format(m.id) for m in self.protein]))
+			for line in rotamers:
+				line.strip()
+				if line.startswith('#'):
+					continue
+				self._update_rotamer(*line.split())
+
+	def _update_rotamer(self, pos, lib, restype, *chis):
+		lib_dict = {'DYN': 'Dynameomics', 'DUN': 'Dunbrack'}
+		res = chimera.specifier.evalSpec(':'+pos).residues()[0]
+		all_rotamers = Rotamers.getRotamers(res, resType=restype, lib=lib_dict[lib])[1]
+		
+		try:
+			rotamer = next(r for r in all_rotamers if 
+				[round(n,4) for n in r.chis] == [round(float(n),4) for n in chis])
+		except StopIteration:
+			print "No rotamer found for {}{} with chi angles {}".format(
+											pos,restype,','.join(chis))
+		else:
+			Rotamers.useRotamer(res, [rotamer])
+			for a in res.atoms: 
+				a.display = 1
