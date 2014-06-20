@@ -7,6 +7,7 @@ from chimera import tkgui, triggerSet
 import Tkinter, Pmw, Tix, Rotamers
 import tables
 import yaml
+from collections import OrderedDict
 
 ui = None
 def showUI(callback=None):
@@ -18,8 +19,8 @@ def showUI(callback=None):
 		ui.addCallback(callback)
 
 Filters = [
-	("Gaudi results", ["*.gaudi"]),
-	("Gaudi Mol2", ["*.gaudi.mol2"])
+	("GAUDI results", ["*.gaudi"]),
+	("GOLD results", ["*.conf"])
 ]
 
 def browse():
@@ -46,30 +47,37 @@ class GaudiViewDialog(ModelessDialog):
 		self.basedir, self.file = os.path.split(path)
 		self.format = format
 
-		# DATA init
-		self.input, self.data = None, None
-		self.parse()
-		self.molecules = {}
-		self.displayed_molecules = []
-		self.selected_molecules = []
-
 		# Triggers
 		self.triggers = triggerSet.TriggerSet()
 		self.triggers.addTrigger(self.SELECTION_CHANGED)
 		self.triggers.addHandler(self.SELECTION_CHANGED, self._sel_changed, None)
 		self.triggers.addTrigger(self.DBL_CLICK)
-		self.triggers.addHandler(self.DBL_CLICK, self._update_protein, None)
+
+		# DATA init
+		self.input, self.data = None, None
+		if self.format == 'GAUDI results':
+			self.parse_gaudi()
+			self.triggers.addHandler(self.DBL_CLICK, self._update_protein_gaudi, None)
+		elif self.format == 'GOLD results':
+			self.parse_gold()
+			self.triggers.addHandler(self.DBL_CLICK, self._update_protein_gold, None)
+		else:
+			raise UserError("Unknown format {}".format(self.format))
+
+		# Open protein
+		try:
+			self.protein = chimera.openModels.open(self.proteinpath)
+		except (KeyError, IOError):
+			self.protein = None
+
+		self.molecules = {}
+		self.displayed_molecules = []
+		self.selected_molecules = []
 		
 		# GUI init
 		self.title = 'GaudiView - {}'.format(path)
 		ModelessDialog.__init__(self)
 		chimera.extension.manager.registerInstance(self)
-
-		# Open protein
-		try:
-			self.protein = chimera.openModels.open(self.input['GAUDI.protein'])
-		except (KeyError, IOError):
-			self.protein = None
 
 
 	def fillInUI(self, parent):
@@ -100,7 +108,7 @@ class GaudiViewDialog(ModelessDialog):
 			if mol in [ m_ for m in self.molecules.values() for m_ in m ]])
 		self.destroy()
 
-	## Parsing and click events
+	## PARSERS
 	def open_molecule_path(self, *paths):
 		for p in paths:
 			try:
@@ -108,8 +116,7 @@ class GaudiViewDialog(ModelessDialog):
 			except KeyError:
 				self.molecules[p] = chimera.openModels.open(p, shareXform=True)
 
-	def parse(self):
-		from collections import OrderedDict
+	def parse_gaudi(self):
 		with open(self.path) as f:
 			self.input = yaml.load(f)
 		self.headers = self.input['GAUDI.results'][0].split()
@@ -117,7 +124,43 @@ class GaudiViewDialog(ModelessDialog):
 		for j, row in enumerate(self.input['GAUDI.results'][1:]):
 			parsed[j] = OrderedDict((k,v) for (k,v) in zip(self.headers, row.split()))
 		self.data = parsed
+		try:
+			self.proteinpath = self.input['GAUDI.protein']
+		except KeyError:
+			self.proteinpath = None
 
+	def parse_gold(self):
+		import glob
+		ligand_basepaths = []
+		basedirs = []
+		self.proteinpath = None
+		with open(self.path) as f:
+			for line in f.readlines():
+				if line.startswith('ligand_data_file'):
+					ligand_basepaths.append(line.split()[1][:-5])
+				elif line.startswith('directory'):
+					basedirs.append(line.split('=')[-1].strip())
+				elif line.startswith('protein_datafile'):
+					proteinpath = line.split('=')[-1].strip()
+					self.proteinpath = os.path.join(self.basedir, proteinpath)
+		parsed = OrderedDict()
+		i = 0
+		for base, ligand in zip(basedirs, ligand_basepaths):
+			path = os.path.join(self.basedir, base, 'gold_soln_'+ligand+'_*_*.mol2')
+			solutions = glob.glob(path)
+			for mol2 in solutions:
+				with open(mol2) as f:
+					lines = f.read().splitlines()
+					j = lines.index('> <Gold.Score>')
+					self.headers = ['Filename'] + lines[j+1].strip().split()
+					data = [os.path.split(mol2)[-1]] + lines[j+2].split()
+					parsed[i] = OrderedDict(OrderedDict((k,v) for (k,v) in 
+								zip(self.headers, data)))
+					i += 1
+		print parsed
+		self.data = parsed
+		
+	# HANDLERS
 	def update_displayed_molecules(self):
 		self.hide_molecules(*self.displayed_molecules)
 
@@ -145,7 +188,8 @@ class GaudiViewDialog(ModelessDialog):
 		self.update_selected_molecules()
 		self.update_displayed_molecules()
 
-	def _update_protein(self, trigger, data, r):
+	# PROTEIN UPDATERS
+	def _update_protein_gaudi(self, trigger, data, r):
 		if not self.protein:
 			return
 		molpath =  self.table.model.data[self.table.model.getRecName(r)]['Filename']
@@ -163,9 +207,9 @@ class GaudiViewDialog(ModelessDialog):
 				line.strip()
 				if line.startswith('#'):
 					continue
-				self._update_rotamer(*line.split())
-
-	def _update_rotamer(self, pos, lib, restype, *chis):
+				self._update_rotamer_gaudi(*line.split())
+	
+	def _update_rotamer_gaudi(self, pos, lib, restype, *chis):
 		lib_dict = {'DYN': 'Dynameomics', 'DUN': 'Dunbrack'}
 		res = chimera.specifier.evalSpec(':'+pos).residues()[0]
 		all_rotamers = Rotamers.getRotamers(res, resType=restype, lib=lib_dict[lib])[1]
@@ -180,3 +224,39 @@ class GaudiViewDialog(ModelessDialog):
 			Rotamers.useRotamer(res, [rotamer])
 			for a in res.atoms: 
 				a.display = 1
+
+	def _update_protein_gold(self, trigger, data, r):
+		if not self.protein:
+			return
+		molpath =  self.table.model.data[self.table.model.getRecName(r)]['Filename']
+		molecule = self.molecules[os.path.join(self.basedir,molpath)][0]
+		mol2data = molecule.mol2data
+		try: 
+			start = mol2data.index('> <Gold.Protein.RotatedAtoms>')
+		except ValueError:
+			print "Sorry, no rotamer info available in mol2"
+		else:
+			rotamers = mol2data[start+1:]
+			chimera.runCommand('~show ' + ' '.join(['#{}'.format(m.id) for m in self.protein]))
+			modified_residues = set()
+			for line in rotamers:
+				if line.startswith('> '):
+					break
+				fields = line.strip().split()
+				atom = self._update_rotamer_gold(fields[0:3], fields[18])
+				if atom:
+					modified_residues.add(atom.residue)
+
+			for res in modified_residues:
+				for a in res.atoms:
+					a.display = 1
+
+	def _update_rotamer_gold(self, xyz, atomnum):
+		try:
+			atom = next(a for prot in self.protein for a in prot.atoms 
+					if a.serialNumber==int(atomnum))
+		except StopIteration:
+			pass
+		else:
+			atom.setCoord(chimera.Point(*map(float, xyz)))
+			return atom
