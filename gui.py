@@ -67,7 +67,7 @@ class GaudiViewDialog(ModelessDialog):
 		# Open protein
 		try:
 			self.protein = chimera.openModels.open(self.proteinpath)
-		except (KeyError, IOError):
+		except:
 			self.protein = None
 
 		self.molecules = {}
@@ -130,7 +130,7 @@ class GaudiViewDialog(ModelessDialog):
 			self.proteinpath = None
 
 	def parse_gold(self):
-		import glob
+		import glob, itertools
 		ligand_basepaths = []
 		basedirs = []
 		self.proteinpath = None
@@ -145,8 +145,8 @@ class GaudiViewDialog(ModelessDialog):
 					self.proteinpath = os.path.join(self.basedir, proteinpath)
 		parsed = OrderedDict()
 		i = 0
-		for base, ligand in zip(basedirs, ligand_basepaths):
-			path = os.path.join(self.basedir, base, 'gold_soln_'+ligand+'_*_*.mol2')
+		for base, ligand in itertools.product(basedirs, ligand_basepaths):
+			path = os.path.normpath(os.path.join(self.basedir, base, '*_'+ligand+'_*_*.mol2'))
 			solutions = glob.glob(path)
 			for mol2 in solutions:
 				with open(mol2) as f:
