@@ -153,7 +153,7 @@ class GaudiViewDialog(ModelessDialog):
 					lines = f.read().splitlines()
 					j = lines.index('> <Gold.Score>')
 					self.headers = ['Filename'] + lines[j+1].strip().split()
-					data = [os.path.split(mol2)[-1]] + lines[j+2].split()
+					data = [mol2] + lines[j+2].split()
 					parsed[i] = OrderedDict(OrderedDict((k,v) for (k,v) in 
 								zip(self.headers, data)))
 					i += 1
