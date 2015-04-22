@@ -2,11 +2,11 @@ import chimera.extension
 
 class GaudiViewEMO(chimera.extension.EMO):
 	def name(self):
-		return "GaudiView"
+		return "GAUDIView"
 	def description(self):
-		return "View results from Gaudi"
+		return "View results from GAUDI"
 	def categories(self):
-		return ['Surface/Binding Analysis']
+		return ['GAUDI']
 	def activate(self):
 		self.module('gui').browse()
 		return None

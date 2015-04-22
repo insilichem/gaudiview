@@ -2,7 +2,13 @@
 	"folders":
 	[
 		{
-			"path": "/home/jaime/git/gaudiview"
+			"path": ".",
+			"name": "GAUDIView",
+			"file_exclude_patterns":[
+                ".*",
+                "*.sublime*",
+                "*.pyc"
+            ]
 		}
 	]
 }

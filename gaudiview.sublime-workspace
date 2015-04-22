@@ -83,23 +83,6 @@
 	},
 	"buffers":
 	[
-		{
-			"file": "/home/jr/x/03__projects/gui.py",
-			"settings":
-			{
-				"buffer_size": 10420,
-				"line_ending": "Unix",
-				"name": "from Tk import *"
-			}
-		},
-		{
-			"file": "/home/jr/.local/UCSF-Chimera64-2014-03-28/share/ModelPanel/ChimeraExtension.py",
-			"settings":
-			{
-				"buffer_size": 1774,
-				"line_ending": "Unix"
-			}
-		}
 	],
 	"build_system": "",
 	"command_palette":
@@ -313,6 +296,11 @@
 	},
 	"file_history":
 	[
+		"/home/jr/dev/gaudiview/gaudiview.sublime-project",
+		"/home/jr/dev/args.bash",
+		"/home/jr/dev/gaudiview/ChimeraExtension.py",
+		"/home/jr/x/03__projects/gui.py",
+		"/home/jr/.local/UCSF-Chimera64-2014-03-28/share/ModelPanel/ChimeraExtension.py",
 		"/home/jr/.local/UCSF-Chimera64-2014-03-28/share/Fly/ChimeraExtension.py",
 		"/usr/local/lib/python2.7/dist-packages/tkintertable-1.1.2-py2.7.egg/tkintertable/Tables.py",
 		"/usr/local/lib/python2.7/dist-packages/tkintertable-1.1.2-py2.7.egg/tkintertable/Filtering.py",
@@ -435,12 +423,7 @@
 		"/home/jrodriguez/.config/sublime-text-2/Packages/User/Python.sublime-settings",
 		"/home/jrodriguez/.config/sublime-text-2/Packages/User/Markdown.sublime-settings",
 		"/home/jrodriguez/.config/sublime-text-2/Packages/SublimeLinter/SublimeLinter.sublime-settings",
-		"/home/jrodriguez/.config/sublime-text-2/Packages/Default/Default (Linux).sublime-keymap",
-		"/home/jrodriguez/.config/sublime-text-2/Packages/User/Default (Linux).sublime-keymap",
-		"/home/jrodriguez/.config/sublime-text-2/Packages/User/toggleRuler.py",
-		"/home/jrodriguez/.config/sublime-text-2/Packages/PlainTasks/messages/Tutorial.todo",
-		"/home/jrodriguez/.config/sublime-text-2/Packages/ToggleSettings/ToggleSettings.sublime-settings",
-		"/home/jrodriguez/.config/sublime-text-2/Packages/User/ToggleSettings.sublime-settings"
+		"/home/jrodriguez/.config/sublime-text-2/Packages/Default/Default (Linux).sublime-keymap"
 	],
 	"find":
 	{
@@ -448,7 +431,7 @@
 	},
 	"find_in_files":
 	{
-		"height": 96.0,
+		"height": 0.0,
 		"where_history":
 		[
 			"<open folders>,*.py",
@@ -641,259 +624,8 @@
 	"groups":
 	[
 		{
-			"selected": 1,
 			"sheets":
 			[
-				{
-					"buffer": 0,
-					"file": "/home/jr/x/03__projects/gui.py",
-					"settings":
-					{
-						"buffer_size": 10420,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								3695,
-								3695
-							]
-						],
-						"settings":
-						{
-							"auto_name": "from Tk import *",
-							"codeintel": true,
-							"codeintel_config":
-							{
-								"JavaScript":
-								{
-									"codeintel_max_recursive_dir_depth": 2,
-									"codeintel_scan_files_in_project": false,
-									"javascriptExtraPaths":
-									[
-									]
-								},
-								"PHP":
-								{
-									"codeintel_max_recursive_dir_depth": 5,
-									"codeintel_scan_files_in_project": false,
-									"phpExtraPaths":
-									[
-									]
-								},
-								"Python":
-								{
-									"env":
-									{
-										"PATH": "/usr/local/bin:/usr/local/sbin:$PATH",
-										"PYTHONPATH": "/home/jr/.local/UCSF-Chimera64-2014-03-28/lib/python2.7/site-packages:/home/jr/.local/UCSF-Chimera64-2014-03-28/share:/usr/local/lib/python2.7/site-packages:/usr/local/lib/python:$PYTHONPATH"
-									}
-								}
-							},
-							"codeintel_enabled_languages":
-							[
-								"JavaScript",
-								"Mason",
-								"XBL",
-								"XUL",
-								"RHTML",
-								"SCSS",
-								"Python",
-								"HTML",
-								"Ruby",
-								"Python3",
-								"XML",
-								"Sass",
-								"XSLT",
-								"Django",
-								"HTML5",
-								"Perl",
-								"CSS",
-								"Twig",
-								"Less",
-								"Smarty",
-								"Node.js",
-								"Tcl",
-								"TemplateToolkit",
-								"PHP"
-							],
-							"codeintel_live": true,
-							"codeintel_live_enabled_languages":
-							[
-								"JavaScript",
-								"Mason",
-								"XBL",
-								"XUL",
-								"RHTML",
-								"SCSS",
-								"Python",
-								"HTML",
-								"Ruby",
-								"Python3",
-								"XML",
-								"Sass",
-								"XSLT",
-								"Django",
-								"HTML5",
-								"Perl",
-								"CSS",
-								"Twig",
-								"Less",
-								"Smarty",
-								"Node.js",
-								"Tcl",
-								"TemplateToolkit",
-								"PHP"
-							],
-							"codeintel_max_recursive_dir_depth": 10,
-							"codeintel_scan_exclude_dir":
-							{
-								"JavaScript":
-								[
-									"/build/",
-									"/min/"
-								]
-							},
-							"codeintel_scan_files_in_project": true,
-							"codeintel_selected_catalogs":
-							[
-								"PyWin32",
-								"jQuery",
-								"Rails"
-							],
-							"codeintel_snippets": true,
-							"codeintel_syntax_map":
-							{
-								"Python Django": "Python"
-							},
-							"codeintel_tooltips": "popup",
-							"sublime_auto_complete": true,
-							"syntax": "Packages/Python/Python.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "/home/jr/.local/UCSF-Chimera64-2014-03-28/share/ModelPanel/ChimeraExtension.py",
-					"settings":
-					{
-						"buffer_size": 1774,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"annotations":
-							[
-								"TODO",
-								"README",
-								"FIXME"
-							],
-							"csslint_options":
-							{
-								"adjoining-classes": "warning",
-								"box-model": true,
-								"box-sizing": "warning",
-								"compatible-vendor-prefixes": "warning",
-								"display-property-grouping": true,
-								"duplicate-background-images": "warning",
-								"duplicate-properties": true,
-								"empty-rules": true,
-								"errors": true,
-								"fallback-colors": "warning",
-								"floats": "warning",
-								"font-faces": "warning",
-								"font-sizes": "warning",
-								"gradients": "warning",
-								"ids": "warning",
-								"import": "warning",
-								"important": "warning",
-								"known-properties": true,
-								"outline-none": "warning",
-								"overqualified-elements": "warning",
-								"qualified-headings": "warning",
-								"regex-selectors": "warning",
-								"rules-count": "warning",
-								"shorthand": "warning",
-								"star-property-hack": "warning",
-								"text-indent": "warning",
-								"underscore-property-hack": "warning",
-								"unique-headings": "warning",
-								"universal-selector": "warning",
-								"vendor-prefix": true,
-								"zero-units": "warning"
-							},
-							"gjslint_ignore":
-							[
-								110
-							],
-							"gjslint_options":
-							[
-							],
-							"javascript_linter": "jshint",
-							"jshint_options":
-							{
-								"browser": true,
-								"evil": true,
-								"regexdash": true,
-								"sub": true,
-								"trailing": true,
-								"wsh": true
-							},
-							"pep8": true,
-							"pep8_ignore":
-							[
-								"E501"
-							],
-							"perl_linter": "perlcritic",
-							"pyflakes_ignore":
-							[
-							],
-							"pyflakes_ignore_import_*": true,
-							"sublimelinter": true,
-							"sublimelinter_delay": 2,
-							"sublimelinter_disable":
-							[
-							],
-							"sublimelinter_executable_map":
-							{
-							},
-							"sublimelinter_fill_outlines": false,
-							"sublimelinter_gutter_marks": true,
-							"sublimelinter_gutter_marks_theme": "simple",
-							"sublimelinter_mark_style": "none",
-							"sublimelinter_notes": true,
-							"sublimelinter_objj_check_ascii": false,
-							"sublimelinter_popup_errors_on_save": false,
-							"sublimelinter_syntax_map":
-							{
-								"C++": "c",
-								"Python Django": "python",
-								"Ruby on Rails": "ruby"
-							},
-							"sublimelinter_wrap_find": true,
-							"syntax": "Packages/Python/Python.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				}
 			]
 		}
 	],
