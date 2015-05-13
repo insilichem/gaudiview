@@ -85,17 +85,19 @@ class GaudiViewDialog(ModelessDialog):
         # Triggers
         self.triggers = chimera.triggerSet.TriggerSet()
         self.triggers.addTrigger(self.SELECTION_CHANGED)
-        self.triggers.addHandler(
-            self.SELECTION_CHANGED, self._sel_changed, None)
         self.triggers.addTrigger(self.DBL_CLICK)
         self.triggers.addHandler(
-            self.DBL_CLICK, self.update_protein, None)
+            self.SELECTION_CHANGED, self._sel_changed, None)
         self.uiMaster().bind("<Configure>", self.on_resize)
 
         # Open protein, if needed
         if self.parser.proteinpath:
+            print "Found protein"
             self.open_molecule_path(self.parser.proteinpath)
             self.protein = self.molecules[self.parser.proteinpath]
+            # Add triggers
+            self.triggers.addHandler(
+                self.DBL_CLICK, self.update_protein, None)
 
     def fillInUI(self, parent):
         # Create main window
