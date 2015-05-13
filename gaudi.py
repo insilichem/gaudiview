@@ -29,6 +29,7 @@ class GaudiData(object):
     def __init__(self, path):
         self.path = path
         self.basedir, self.file = os.path.split(path)
+        self.metadata = {}
         self.data = self.parse()
         self.commonpath = self.basedir
 

@@ -28,6 +28,7 @@ class GoldData(object):
     def __init__(self, path):
         self.path = path
         self.basedir, self.file = os.path.split(path)
+        self.metadata = {}
         self.data, self.commonpath = self.parse()
 
     def parse(self):
@@ -63,6 +64,9 @@ class GoldData(object):
                                                         zip(self.headers, data)))
                     i += 1
                     parsed_filenames.add(mol2)
+                    k = lines.index('@<TRIPOS>COMMENT')
+                    self.metadata[mol2] = "\n".join(lines[k + 1:])
+
         commonpath = common_path_of_filenames(parsed_filenames)
         for v in parsed.values():
             v['Filename'] = os.path.relpath(v['Filename'], commonpath)

@@ -89,10 +89,10 @@ class GaudiViewDialog(ModelessDialog):
         self.triggers.addHandler(
             self.SELECTION_CHANGED, self._sel_changed, None)
         self.uiMaster().bind("<Configure>", self.on_resize)
+        self.uiMaster().bind("<Return>", self.cli_callback)
 
         # Open protein, if needed
         if self.parser.proteinpath:
-            print "Found protein"
             self.open_molecule_path(self.parser.proteinpath)
             self.protein = self.molecules[self.parser.proteinpath]
             # Add triggers
@@ -113,6 +113,36 @@ class GaudiViewDialog(ModelessDialog):
         self.table.createFilteringBar(parent)
         self.table.autoResizeColumns()
         self.table.redrawTable()
+
+        # Per-frame CLI input
+        self.cliframe = Tkinter.Frame(parent)
+        self.cliframe.pack(fill='x')
+        Tkinter.Label(self.cliframe, text="Command input").pack()
+        self.clifield = Tkinter.Entry(self.cliframe)
+        self.clifield.pack(fill='x')
+        self.clibutton = Tkinter.Button(
+            self.cliframe, text="Run", width=5, command=self.cli_callback)
+        self.clibutton.pack(side='right')
+        self.selectionbool = Tkinter.BooleanVar()
+        self.selectioncheck = Tkinter.Checkbutton(
+            self.cliframe, text="Select in Chimera", variable=self.selectionbool,
+            command=self.select_in_chimera)
+        self.selectioncheck.pack(side='left')
+
+        if self.parser.metadata:
+            # Details of selected solution
+            self.details_frame = Tkinter.Frame(parent)
+            self.details_frame.pack(fill='x')
+            Tkinter.Label(self.cliframe, text="Details").pack()
+            self.details_field = Tkinter.Text(
+                self.details_frame, state=Tkinter.DISABLED, font=(
+                    'Monospace', 10),
+                height=8, wrap=Tkinter.NONE)
+            self.details_field.pack(side='left', fill='x')
+            self.details_scroll = Tkinter.Scrollbar(self.details_frame)
+            self.details_scroll.pack(side='right', fill='y')
+            self.details_scroll.config(command=self.details_field.yview)
+            self.details_field.config(yscrollcommand=self.details_scroll.set)
 
     def Apply(self):
         chimera.openModels.close([m_ for p in self.molecules
@@ -138,7 +168,6 @@ class GaudiViewDialog(ModelessDialog):
 
     def update_displayed_molecules(self):
         self.hide_molecules(*self.displayed_molecules)
-
         self.open_molecule_path(*self.selected_molecules)
         self.displayed_molecules.extend([m for p in self.selected_molecules
                                          for m in self.molecules[p]])
@@ -149,10 +178,25 @@ class GaudiViewDialog(ModelessDialog):
             try:
                 molpath = self.table.model.data[
                     self.table.model.getRecName(row)]['Filename']
-                self.selected_molecules.append(
-                    os.path.normpath(os.path.join(self.commonpath, molpath)))
             except IndexError:  # click out of boundaries
                 pass
+            else:
+                self.selected_molecules.append(
+                    os.path.normpath(os.path.join(self.commonpath, molpath)))
+
+    def update_details_field(self):
+        self.details_field.config(state=Tkinter.NORMAL)
+        self.details_field.delete(1.0, Tkinter.END)
+        for m in self.selected_molecules:
+            try:
+                data = self.parser.metadata[m]
+            except KeyError:
+                data = "No metadata available for this file"
+            else:
+                self.details_field.insert(Tkinter.END, m + "\n")
+                self.details_field.insert(Tkinter.END, data + "\n\n")
+
+        self.details_field.config(state=Tkinter.DISABLED)
 
     def hide_molecules(self, *mols):
         for m in mols:
@@ -165,6 +209,11 @@ class GaudiViewDialog(ModelessDialog):
     def _sel_changed(self, trigger, data, row):
         self.update_selected_molecules()
         self.update_displayed_molecules()
+        if self.parser.metadata:
+            self.update_details_field()
+        if self.selectionbool.get():
+            self.select_in_chimera()
+        self.cli_callback()
 
     def on_resize(self, event):
         self.width = event.width
@@ -177,3 +226,13 @@ class GaudiViewDialog(ModelessDialog):
         ligand = self.molecules[
             os.path.normpath(os.path.join(self.commonpath, molpath))]
         self.parser.update_protein(self.protein, ligand)
+
+    def cli_callback(self, *args, **kwargs):
+        command = self.clifield.get()
+        if command:
+            chimera.runCommand(command)
+
+    def select_in_chimera(self):
+        chimera.selection.clearCurrent()
+        for m in self.selected_molecules:
+            chimera.selection.addCurrent(self.molecules[m])
