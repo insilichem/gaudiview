@@ -17,6 +17,7 @@ import importlib
 # Chimera
 import chimera
 from chimera.baseDialog import ModelessDialog
+from Midas import MidasError
 # External dependencies
 import tables
 
@@ -111,7 +112,7 @@ class GaudiViewDialog(ModelessDialog):
                                   gaudiparent=self)
         self.table.createTableFrame()
         self.table.createFilteringBar(parent)
-        self.table.autoResizeColumns()
+        self.table.adjustColumnWidths()
         self.table.redrawTable()
 
         # Per-frame CLI input
@@ -246,14 +247,26 @@ class GaudiViewDialog(ModelessDialog):
 
     def cli_callback(self, *args, **kwargs):
         command = self.clifield.get()
-        if command:
+        try:
             chimera.runCommand(command)
+        except MidasError as e:
+            print e
+            self.gui_error(e.__str__())
 
     def select_in_chimera(self):
+        chimera.selection.clearCurrent()
         if self.selectionbool.get():
-            chimera.selection.clearCurrent()
             for m in self.selected_molecules:
                 chimera.selection.addCurrent(self.molecules[m])
 
-    def give_focus(self, event, caller=None):
+    @staticmethod
+    def give_focus(event, caller=None):
         caller.focus_set()
+
+    @staticmethod
+    def gui_info(text):
+        chimera.statusline.show_message(text, color='black', blankAfter=3)
+
+    @staticmethod
+    def gui_error(text):
+        chimera.statusline.show_message(text, color='red', blankAfter=3)

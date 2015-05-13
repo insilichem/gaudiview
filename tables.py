@@ -22,8 +22,8 @@ class Table(TableCanvas):
 
     def set_defaults(self):
         """Set default settings"""
-        self.cellwidth = 150
-        self.maxcellwidth = 200
+        self.cellwidth = 60
+        self.maxcellwidth = 300
         self.rowheight = 20
         self.horizlines = 1
         self.vertlines = 0
@@ -35,7 +35,7 @@ class Table(TableCanvas):
         self.linewidth = 1.0
         self.rowheaderwidth = 0
         self.showkeynamesinheader = False
-        self.thefont = ('Arial', 12)
+        self.thefont = ('Arial', 11)
         self.cellbackgr = '#EEEEEE'
         self.entrybackgr = 'white'
         self.grid_color = '#ABB1AD'
@@ -83,7 +83,7 @@ class Table(TableCanvas):
     def handle_arrow_keys(self, event):
         """Handle arrow keys press"""
         x, y = self.getCanvasPos(self.currentrow, 0)
-        if x == None:
+        if x is None:
             return
         if event.keysym == 'Up':
             if self.currentrow == 0:
@@ -152,12 +152,12 @@ class Table(TableCanvas):
 
     def createFilteringBar(self, parent=None, fields=None):
         """Add a filter frame"""
-        if parent == None:
+        if parent is None:
             parent = Toplevel()
             parent.title('Filter Records')
             x, y, w, h = self.getGeometry(self.master)
             parent.geometry('+%s+%s' % (x, y + h))
-        if fields == None:
+        if fields is None:
             fields = self.model.columnNames
 
         self.filterframe = Filters(parent, fields, self.doFilter, self.showAll)
@@ -170,7 +170,7 @@ class Table(TableCanvas):
         class and that handles everything else.
         See filtering frame class for how searching is done.
         """
-        if self.model == None:
+        if self.model is None:
             return
         names = self.filterframe.doFiltering(searchfunc=self.model.filterBy)
         if not names:
@@ -232,7 +232,7 @@ class Headers(ColumnHeader):
     def __init__(self, parent=None, table=None):
         Canvas.__init__(self, parent, bg='gray25', width=500, height=20)
         self.thefont = 'Arial 14'
-        if table != None:
+        if table is not None:
             self.table = table
             self.height = 20
             self.model = self.table.getModel()
@@ -253,7 +253,7 @@ class Headers(ColumnHeader):
         self.table.delete('entry')
         self.table.delete('multicellrect')
         colclicked = self.table.get_col_clicked(event)
-        if colclicked == None:
+        if colclicked is None:
             return
         # set all rows selected
         self.table.allrows = True
@@ -287,7 +287,7 @@ class Headers(ColumnHeader):
             return
         self.delete('resizesymbol')
         # move column
-        if self.draggedcol != None and self.table.currentcol != self.draggedcol:
+        if self.draggedcol is not None and self.table.currentcol != self.draggedcol:
             self.model.moveColumn(self.table.currentcol, self.draggedcol)
             self.table.redrawTable()
         elif not self.draggedcol:  # sort!
