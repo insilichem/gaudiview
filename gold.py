@@ -27,7 +27,8 @@ class GoldData(object):
 
     def __init__(self, path):
         self.path = path
-        self.data = self.parse()
+        self.basedir, self.file = os.path.split(path)
+        self.data, self.commonpath = self.parse()
 
     def parse(self):
         ligand_basepaths = []
@@ -50,7 +51,8 @@ class GoldData(object):
                 os.path.join(self.basedir, base, '*_' + ligand + '_*_*.mol2'))
             solutions = glob.glob(path)
             for mol2 in solutions:
-                if os.path.realpath(mol2) in parsed_filenames:
+                mol2 = os.path.realpath(mol2)
+                if mol2 in parsed_filenames:
                     continue
                 with open(mol2) as f:
                     lines = f.read().splitlines()
@@ -60,13 +62,41 @@ class GoldData(object):
                     parsed[i] = OrderedDict(OrderedDict((k, v) for (k, v) in
                                                         zip(self.headers, data)))
                     i += 1
-                    parsed_filenames.add(os.path.realpath(mol2))
+                    parsed_filenames.add(mol2)
+        commonpath = common_path_of_filenames(parsed_filenames)
+        for v in parsed.values():
+            v['Filename'] = os.path.relpath(v['Filename'], commonpath)
 
-        self.data = parsed
+        return parsed, commonpath
 
-    def update_rotamers(self, xyz, atomnum):
+    def update_protein(self, protein, ligand):
+        if not protein:
+            return
+        mol2data = ligand[0].mol2data
         try:
-            atom = next(a for prot in self.protein for a in prot.atoms
+            start = mol2data.index('> <Gold.Protein.RotatedAtoms>')
+        except ValueError:
+            print "Sorry, no rotamer info available in mol2"
+        else:
+            rotamers = mol2data[start + 1:]
+            # chimera.runCommand(
+            # '~show ' + ' '.join(['#{}'.format(m.id) for m in protein]))
+            modified_residues = set()
+            for line in rotamers:
+                if line.startswith('> '):
+                    break
+                fields = line.strip().split()
+                atom = self.update_rotamers(protein, fields[0:3], fields[18])
+                if atom:
+                    modified_residues.add(atom.residue)
+            for res in modified_residues:
+                for a in res.atoms:
+                    a.display = 1
+
+    @staticmethod
+    def update_rotamers(protein, xyz, atomnum):
+        try:
+            atom = next(a for prot in protein for a in prot.atoms
                         if a.serialNumber == int(atomnum))
         except StopIteration:
             pass
@@ -74,30 +104,11 @@ class GoldData(object):
             atom.setCoord(chimera.Point(*map(float, xyz)))
             return atom
 
-    def update_protein(self, trigger, data, r):
-        if not self.protein:
-            return
-        molpath = self.table.model.data[
-            self.table.model.getRecName(r)]['Filename']
-        molecule = self.molecules[os.path.join(self.basedir, molpath)][0]
-        mol2data = molecule.mol2data
-        try:
-            start = mol2data.index('> <Gold.Protein.RotatedAtoms>')
-        except ValueError:
-            print "Sorry, no rotamer info available in mol2"
-        else:
-            rotamers = mol2data[start + 1:]
-            chimera.runCommand(
-                '~show ' + ' '.join(['#{}'.format(m.id) for m in self.protein]))
-            modified_residues = set()
-            for line in rotamers:
-                if line.startswith('> '):
-                    break
-                fields = line.strip().split()
-                atom = self._update_rotamer_gold(fields[0:3], fields[18])
-                if atom:
-                    modified_residues.add(atom.residue)
 
-            for res in modified_residues:
-                for a in res.atoms:
-                    a.display = 1
+def common_path(directories):
+    norm_paths = [os.path.abspath(p) + os.path.sep for p in directories]
+    return os.path.dirname(os.path.commonprefix(norm_paths))
+
+
+def common_path_of_filenames(filenames):
+    return common_path([os.path.dirname(f) for f in filenames])
