@@ -102,7 +102,8 @@ class GaudiViewDialog(ModelessDialog):
         # Create main window
         self.tframe = Tkinter.Frame(parent)
         self.tframe.pack(expand=True, fill='both')
-
+        self.tframe.bind(
+            '<Enter>', lambda event, caller=self.tframe: self.give_focus(event, caller))
         # Fill data in and create table
         self.model = tables.TableModel()
         self.model.importDict(self.data)
@@ -129,6 +130,8 @@ class GaudiViewDialog(ModelessDialog):
             self.cliframe, text="Select in Chimera", variable=self.selectionbool,
             command=self.select_in_chimera)
         self.selectioncheck.grid(row=2, column=0, sticky='w')
+        self.clifield.bind('<Return>', self.cli_callback, None)
+        self.clifield.bind('<KP_Enter>', self.cli_callback, None)
         self.cliframe.pack(fill='x')
 
         if self.parser.metadata:
@@ -153,7 +156,8 @@ class GaudiViewDialog(ModelessDialog):
                                       xscrollcommand=self.details_scroll_x.set)
             self.details_scroll_x.config(command=self.details_field.xview)
             self.details_scroll_y.config(command=self.details_field.yview)
-
+            self.details_frame.bind(
+                '<Enter>', lambda event, caller=self.details_frame: self.give_focus(event, caller))
             self.details_frame.pack(fill='x')
 
     def Apply(self):
@@ -250,3 +254,6 @@ class GaudiViewDialog(ModelessDialog):
             chimera.selection.clearCurrent()
             for m in self.selected_molecules:
                 chimera.selection.addCurrent(self.molecules[m])
+
+    def give_focus(self, event, caller=None):
+        caller.focus_set()

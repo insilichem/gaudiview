@@ -54,7 +54,7 @@ class Table(TableCanvas):
         self.bind("<Shift-Button-1>", self.handle_left_shift_click)
         self.bind("<Up>", self.handle_arrow_keys)
         self.bind("<Down>", self.handle_arrow_keys)
-        self.focus_set()
+        # self.focus_set()
 
     def handle_left_click(self, event):
         self.clearSelected()
