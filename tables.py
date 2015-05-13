@@ -10,7 +10,6 @@
 # Web: https://bitbucket.org/jrgp/gaudiview
 ##############
 
-import chimera
 from tkintertable.Tables import TableCanvas, ColumnHeader, RowHeader, AutoScrollbar
 from tkintertable.Filtering import *
 from tkintertable.TableModels import TableModel
