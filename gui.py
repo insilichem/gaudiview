@@ -89,7 +89,6 @@ class GaudiViewDialog(ModelessDialog):
         self.triggers.addHandler(
             self.SELECTION_CHANGED, self._sel_changed, None)
         self.uiMaster().bind("<Configure>", self.on_resize)
-        self.uiMaster().bind("<Return>", self.cli_callback)
 
         # Open protein, if needed
         if self.parser.proteinpath:
@@ -116,33 +115,46 @@ class GaudiViewDialog(ModelessDialog):
 
         # Per-frame CLI input
         self.cliframe = Tkinter.Frame(parent)
-        self.cliframe.pack(fill='x')
-        Tkinter.Label(self.cliframe, text="Command input").pack()
+        self.cliframe.grid_rowconfigure(0, weight=1)
+        self.cliframe.grid_columnconfigure(0, weight=1)
+        Tkinter.Label(self.cliframe, text="Command input").grid(
+            row=0, column=0, sticky="ew")
         self.clifield = Tkinter.Entry(self.cliframe)
-        self.clifield.pack(fill='x')
+        self.clifield.grid(row=1, column=0, sticky='nsew')
         self.clibutton = Tkinter.Button(
             self.cliframe, text="Run", width=5, command=self.cli_callback)
-        self.clibutton.pack(side='right')
+        self.clibutton.grid(row=1, column=1)
         self.selectionbool = Tkinter.BooleanVar()
         self.selectioncheck = Tkinter.Checkbutton(
             self.cliframe, text="Select in Chimera", variable=self.selectionbool,
             command=self.select_in_chimera)
-        self.selectioncheck.pack(side='left')
+        self.selectioncheck.grid(row=2, column=0, sticky='w')
+        self.cliframe.pack(fill='x')
 
         if self.parser.metadata:
             # Details of selected solution
             self.details_frame = Tkinter.Frame(parent)
-            self.details_frame.pack(fill='x')
-            Tkinter.Label(self.cliframe, text="Details").pack()
+            self.details_frame.grid_rowconfigure(0, weight=1)
+            self.details_frame.grid_columnconfigure(0, weight=1)
+            Tkinter.Label(self.details_frame, text="Details").grid(
+                row=0, column=0, sticky='new')
+
+            self.details_scroll_x = Tkinter.Scrollbar(
+                self.details_frame, orient=Tkinter.HORIZONTAL)
+            self.details_scroll_x.grid(row=2, column=0, sticky='ew')
+            self.details_scroll_y = Tkinter.Scrollbar(self.details_frame)
+            self.details_scroll_y.grid(row=1, column=1, sticky='ns')
+
             self.details_field = Tkinter.Text(
-                self.details_frame, state=Tkinter.DISABLED, font=(
-                    'Monospace', 10),
-                height=8, wrap=Tkinter.NONE)
-            self.details_field.pack(side='left', fill='x')
-            self.details_scroll = Tkinter.Scrollbar(self.details_frame)
-            self.details_scroll.pack(side='right', fill='y')
-            self.details_scroll.config(command=self.details_field.yview)
-            self.details_field.config(yscrollcommand=self.details_scroll.set)
+                self.details_frame, state=Tkinter.DISABLED,
+                font=('Monospace', 10), height=8, wrap=Tkinter.NONE)
+            self.details_field.grid(row=1, column=0, sticky='nsew')
+            self.details_field.config(yscrollcommand=self.details_scroll_y.set,
+                                      xscrollcommand=self.details_scroll_x.set)
+            self.details_scroll_x.config(command=self.details_field.xview)
+            self.details_scroll_y.config(command=self.details_field.yview)
+
+            self.details_frame.pack(fill='x')
 
     def Apply(self):
         chimera.openModels.close([m_ for p in self.molecules
@@ -191,7 +203,9 @@ class GaudiViewDialog(ModelessDialog):
             try:
                 data = self.parser.metadata[m]
             except KeyError:
-                data = "No metadata available for this file"
+                self.details_field.insert(Tkinter.END, m + "\n")
+                self.details_field.insert(
+                    Tkinter.END, "No metadata available\n\n")
             else:
                 self.details_field.insert(Tkinter.END, m + "\n")
                 self.details_field.insert(Tkinter.END, data + "\n\n")
@@ -211,8 +225,7 @@ class GaudiViewDialog(ModelessDialog):
         self.update_displayed_molecules()
         if self.parser.metadata:
             self.update_details_field()
-        if self.selectionbool.get():
-            self.select_in_chimera()
+        self.select_in_chimera()
         self.cli_callback()
 
     def on_resize(self, event):
@@ -233,6 +246,7 @@ class GaudiViewDialog(ModelessDialog):
             chimera.runCommand(command)
 
     def select_in_chimera(self):
-        chimera.selection.clearCurrent()
-        for m in self.selected_molecules:
-            chimera.selection.addCurrent(self.molecules[m])
+        if self.selectionbool.get():
+            chimera.selection.clearCurrent()
+            for m in self.selected_molecules:
+                chimera.selection.addCurrent(self.molecules[m])
