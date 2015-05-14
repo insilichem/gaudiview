@@ -18,8 +18,8 @@ import importlib
 import chimera
 from chimera.baseDialog import ModelessDialog
 from Midas import MidasError
-# External dependencies
-import tables
+# Internal dependencies
+from . import tables
 
 ui = None
 

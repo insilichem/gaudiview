@@ -9,8 +9,3 @@
 #            <jeandidier.marechal@uab.cat>
 # Web: https://bitbucket.org/jrgp/gaudiview
 ##############
-
-import gaudi
-import gold
-import gui
-import tables

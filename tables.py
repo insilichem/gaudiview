@@ -10,11 +10,11 @@
 # Web: https://bitbucket.org/jrgp/gaudiview
 ##############
 
+# External dependencies
 from tkintertable.Tables import TableCanvas, ColumnHeader, RowHeader, AutoScrollbar
 from tkintertable.Filtering import *
 from tkintertable.TableModels import TableModel
 from tkintertable.Tables_IO import TableImporter
-import gui
 
 
 class Table(TableCanvas):
@@ -77,7 +77,7 @@ class Table(TableCanvas):
     def handle_left_release(self, event):
         self.endrow = self.get_row_clicked(event)
         self.gaudiparent.triggers.activateTrigger(
-            gui.GaudiViewDialog.SELECTION_CHANGED, None)
+            self.gaudiparent.SELECTION_CHANGED, None)
 
     def handle_arrow_keys(self, event):
         """Handle arrow keys press"""
@@ -100,7 +100,7 @@ class Table(TableCanvas):
         self.setSelectedRow(self.currentrow)
         self.drawSelectedRow()
         self.gaudiparent.triggers.activateTrigger(
-            gui.GaudiViewDialog.SELECTION_CHANGED, None)
+            self.gaudiparent.SELECTION_CHANGED, None)
 
     def handle_double_click(self, event):
         """Do double click stuff. Selected row/cols will already have
@@ -108,7 +108,7 @@ class Table(TableCanvas):
 
         row = self.get_row_clicked(event)
         self.gaudiparent.triggers.activateTrigger(
-            gui.GaudiViewDialog.DBL_CLICK, row)
+            self.gaudiparent.DBL_CLICK, row)
 
     def createTableFrame(self, callback=None):
         self.tablerowheader = RowHeader(
