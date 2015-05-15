@@ -36,12 +36,11 @@ class GaudiData(object):
     def parse(self):
         with open(self.path) as f:
             self.input = yaml.load(f)
-        self.headers = self.input['GAUDI.results'][0].split()
+        self.headers = ['Filename'] + self.input['GAUDI.objectives']
         parsed = OrderedDict()
-        for j, row in enumerate(self.input['GAUDI.results'][1:]):
-            parsed[j] = OrderedDict((k, v)
-                                    for (k, v) in zip(self.headers, row.split()))
-
+        for filename, score in self.input['GAUDI.results'].iteritems():
+            parsed[filename] = OrderedDict((k, v) for (k, v) in
+                                           zip(self.headers, [filename] + score))
         try:
             self.proteinpath = self.input['GAUDI.protein']
         except KeyError:
@@ -60,8 +59,6 @@ class GaudiData(object):
             print "Sorry, no rotamer info available in mol2"
         else:
             rotamers = mol2data[start + 1:end]
-            # chimera.runCommand(
-            # '~show ' + ' '.join(['#{}'.format(m.id) for m in protein]))
             for line in rotamers:
                 line.strip()
                 if line.startswith('#'):
@@ -77,7 +74,8 @@ class GaudiData(object):
 
         try:
             rotamer = next(r for r in all_rotamers if
-                           [round(n, 4) for n in r.chis] == [round(float(n), 4) for n in chis])
+                           [round(n, 4) for n in r.chis] ==
+                           [round(float(n), 4) for n in chis])
         except StopIteration:
             print "No rotamer found for {}{} with chi angles {}".format(
                 pos, restype, ','.join(chis))

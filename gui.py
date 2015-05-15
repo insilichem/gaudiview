@@ -33,7 +33,7 @@ def showUI(callback=None):
         ui.addCallback(callback)
 
 Filters = [
-    ("GAUDI results", ["*.gaudi"]),
+    ("GAUDI results", ["*.gaudi", "*.gaudi.yaml"]),
     ("GOLD results", ["*.conf"])
 ]
 
@@ -91,7 +91,7 @@ class GaudiViewDialog(ModelessDialog):
             self.SELECTION_CHANGED, self._sel_changed, None)
         self.uiMaster().bind("<Configure>", self.on_resize)
 
-        # Open protein, if needed
+        # Open protein, if neede
         if self.parser.proteinpath:
             self.open_molecule_path(self.parser.proteinpath)
             self.protein = self.molecules[self.parser.proteinpath]
