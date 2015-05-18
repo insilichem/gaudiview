@@ -11,12 +11,10 @@
 ##############
 
 # Python
-import os
 import Tkinter
 # Chimera
 import chimera
 from chimera.baseDialog import ModelessDialog
-from Midas import MidasError
 # Internal dependencies
 from . import tables
 from .extensions.base import load_controller
