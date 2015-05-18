@@ -10,6 +10,13 @@
 # Web: https://bitbucket.org/jrgp/gaudiview
 ##############
 
+"""
+Defines base classes for new extensions. Subclass them and extend them
+as needed. They are ABCs, so you will know what to override and what not.
+
+Also, don't forget to extend the dict `FORMATS` to include you new extension.
+"""
+
 import abc
 import importlib
 import chimera
@@ -23,10 +30,22 @@ FORMATS = {
 
 
 def load_controller(path, format, gui=None):
+    """
+    Returns an instance of the needed parser for this format.
+    """
     return importlib.import_module(FORMATS[format]).load(path=path, gui=gui)
 
 
 class GaudiViewBaseController(object):
+
+    """
+    Base class that provides some built-in methods to the controllers.
+    To use it, just inherit from it and override :meth:`display`, :meth:`process`,
+    and :meth:`get_table_dict`.
+
+    If you need to override some flags in `__init__`, don't forget to call
+    `GaudiViewBaseController.__init__()`.
+    """
 
     __metaclass__ = abc.ABCMeta
 
@@ -187,16 +206,45 @@ class GaudiViewBaseController(object):
         pass
 
     # Model handlers
+    @abc.abstractmethod
     def get_table_dict(self):
-        return self.model.table_data
+        pass
 
 
 class GaudiViewBaseModel(object):
+
+    """
+    Base class for new models. The model interfaces with the input file
+    and extracts all relevant info: filenames of solutions, scores, metadata
+    of interactions...
+
+    Subclass :class:`GaudiViewBaseModel` and define all three methods below.
+    """
 
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def __init__(self, *args, **kwargs):
+        """
+        The base controller requires these attributes to operate, so use them:
+
+        :molecules: A dictionary that allocates already processed molecules, as
+                    opened by Chimera. The key is the base filename, whose value
+                    is a list of `chimera.Molecule` objects.
+
+        :metadata:  A dictionary that allocates metadata about each processed
+                    molecule. It's a parallel dict to `self.molecules`, so the
+                    keys are the same. The values should be lists of strings,
+                    since they will end up in the details field of the GUI.
+
+        :data:      These holds the parsed input file. If it's not in the
+                    format requested by tkintertable, use a second attribute called
+                    `table_data` and remember to return it with
+                    `controller.get_table_dict()`
+
+        :headers:   A list of strings that will be used to populate the header
+                    of the table.
+        """
         pass
 
     @abc.abstractmethod

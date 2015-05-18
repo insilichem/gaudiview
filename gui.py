@@ -23,6 +23,9 @@ ui = None
 
 
 def showUI(callback=None):
+    """
+    Requested by Chimera way-of-doing-things
+    """
     global ui
     if not ui:
         ui = GaudiViewDialog()
@@ -32,6 +35,12 @@ def showUI(callback=None):
 
 
 class GaudiViewDialog(ModelessDialog):
+
+    """
+    Displays main GUI and initializes models and controllers
+    for the respective file format.
+    """
+
     buttons = ("OK", "Close")
     default = None
     help = "https://bitbucket.org/jrgp/gaudiview"
@@ -90,6 +99,8 @@ class GaudiViewDialog(ModelessDialog):
             self.cliframe, text="Run", width=5, command=self.controller.run_command)
         self.clibutton.grid(row=1, column=1, sticky='news')
 
+        # Enables selection of current entries in Chimera canvas
+        # if format uses several molecules per entry (GAUDI)
         if self.controller.HAS_SELECTION:
             self.selection_listbox = Tkinter.Listbox(
                 self.cliframe, selectmode=Tkinter.EXTENDED, height=5)
@@ -102,6 +113,8 @@ class GaudiViewDialog(ModelessDialog):
                 self.cliframe, text="Select in Chimera", variable=self.selectionbool,
                 command=self.controller.select_in_chimera)
             self.selectioncheck.grid(row=2, column=1, sticky='ew')
+        # for single-molecule-per-entry formats (GOLD),
+        # a single tickbox is enough
         else:
             self.selectionbool = Tkinter.BooleanVar()
             self.selectioncheck = Tkinter.Checkbutton(
@@ -111,8 +124,8 @@ class GaudiViewDialog(ModelessDialog):
 
         self.cliframe.pack(fill='x')
 
+        # Details of selected solution
         if self.controller.HAS_DETAILS:
-            # Details of selected solution
             self.details_frame = Tkinter.Frame(parent)
             self.details_frame.grid_rowconfigure(0, weight=1)
             self.details_frame.grid_columnconfigure(0, weight=1)
@@ -138,6 +151,9 @@ class GaudiViewDialog(ModelessDialog):
             self.details_frame.pack(fill='x')
 
     def Apply(self):
+        """
+        Close unselected entries
+        """
         chimera.openModels.close(
             [m_ for p in self.controller.molecules
              for m_ in self.controller.model.molecules[p]
@@ -148,6 +164,9 @@ class GaudiViewDialog(ModelessDialog):
         self.destroy()
 
     def Close(self):
+        """
+        Close everything amd exit
+        """
         chimera.openModels.close(
             [m_ for m in self.controller.model.molecules.values() for m_ in m])
         self.destroy()
@@ -156,7 +175,12 @@ class GaudiViewDialog(ModelessDialog):
         self.width = event.width
         self.height = event.height
 
-    def update_details_field(self, info="No info available"):
+    def update_details_field(self, info=None):
+        """
+        Clears details_field and writes new content
+        """
+        if not info:
+            info = "Not info available for selection"
         self.details_field.config(state=Tkinter.NORMAL)
         self.details_field.delete(1.0, Tkinter.END)
         self.details_field.insert(Tkinter.END, info)
@@ -164,6 +188,10 @@ class GaudiViewDialog(ModelessDialog):
 
     @staticmethod
     def give_focus(event, caller=None):
+        """
+        Gives focus (for keyboard bindings, mainly) to whatever
+        widget/frame we put the cursor over
+        """
         caller.focus_set()
 
     @staticmethod

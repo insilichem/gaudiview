@@ -30,6 +30,17 @@ def load(*args, **kwargs):
 
 class GaudiModel(GaudiViewBaseModel):
 
+    """
+    Parses GAUDI output files and processes resulting Zip files.
+
+    .. todo::
+
+        Process metadata files (rotamers, h bonds, clashes).
+
+        Cache the protein file if possible.
+
+    """
+
     def __init__(self, path, *args, **kwargs):
         self.path = path
         self.data, self.table_data, self.headers = self.parse()
@@ -38,6 +49,12 @@ class GaudiModel(GaudiViewBaseModel):
         self.tempdir = tempfile.mkdtemp('gaudiview')
 
     def parse(self):
+        """
+        Since the output files are already YAML-formatted, we
+        only need to load them with PyYaml. However, tkintertable
+        requests a specific hierarchy of the data, so we provide that
+        too.
+        """
         with open(self.path) as f:
             data = yaml.load(f)
         headers = ['Filename'] + data['GAUDI.objectives']
@@ -49,6 +66,11 @@ class GaudiModel(GaudiViewBaseModel):
         return data, table_data, headers
 
     def parse_zip(self, path):
+        """
+        GAUDI zips its results files. We extract them on the fly to temp
+        directories and feed those to the corresponding parsers (Chimera
+        and YAML, as of now).
+        """
         try:
             z = zipfile.ZipFile(path)
         except zipfile.BadZipfile:
@@ -119,7 +141,12 @@ class GaudiController(GaudiViewBaseController):
 
     def process(self, key):
         """
-        Check if ZIP contains additional data
+        Display metadata for each solution.
+
+        .. todo::
+
+            Parse metadata files and display their info: H bonds,
+            clashes, distances... and every objective.
         """
         pass
         # if not protein:
@@ -138,8 +165,15 @@ class GaudiController(GaudiViewBaseController):
         #             continue
         #         self.update_rotamers(*line.split())
 
+    def get_table_dict(self):
+        return self.model.table_data
+
     @staticmethod
     def update_rotamers(pos, lib, restype, *chis):
+        """ Since the individuals are expressed before writing them down,
+        theoretically each protein already carries the applied rotamers.
+        This won't be needed?
+        """
         lib_dict = {'DYN': 'Dynameomics', 'DUN': 'Dunbrack'}
         res = chimera.specifier.evalSpec(':' + pos).residues()[0]
         all_rotamers = Rotamers.getRotamers(

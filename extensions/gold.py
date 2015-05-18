@@ -27,6 +27,20 @@ def load(*args, **kwargs):
 
 class GoldModel(GaudiViewBaseModel):
 
+    """
+    Parses and processes GOLD `*.conf` input files to
+    display all the mol2 output files.
+
+    .. todo::
+
+        Display hydrogen bonds
+
+        Display covalent bonds
+
+        More user-friendly metadata
+
+    """
+
     def __init__(self, path, *args, **kwargs):
         self.path = path
         self.basedir, self.file = os.path.split(path)
@@ -38,6 +52,26 @@ class GoldModel(GaudiViewBaseModel):
                 self.proteinpath, shareXform=True)
 
     def parse(self):
+        """
+        Opens a `gold.conf` input file and locates key parameters.
+
+        :ligand_data_file:  Location of input ligand for GOLD.
+                            We get the input name from here.
+
+        :directory: Location of output files
+
+        :protein_datafile: Location of the main protein file, usually
+                            next to the `gold.conf` file.
+
+        With those parameters, we can retrieve all the solutions from the
+        experiment, since they are mol2 files tagged with `ligand_data_file`.
+
+        However, some essays contain multiple instances of these parameters,
+        so we must exhaust all the options with itertools.product.
+
+        We also get rid of ranked symlinks and save the comment section from
+        each mol2.
+        """
         ligand_basepaths = []
         basedirs = []
         proteinpath = None
@@ -59,7 +93,7 @@ class GoldModel(GaudiViewBaseModel):
                 os.path.join(self.basedir, base, '*_' + ligand + '_*_*.mol2'))
             solutions = glob.glob(path)
             for mol2 in solutions:
-                mol2 = os.path.realpath(mol2)
+                mol2 = os.path.realpath(mol2)  # discard symlinks
                 if mol2 in parsed_filenames:
                     continue
                 with open(mol2) as f:
@@ -67,10 +101,13 @@ class GoldModel(GaudiViewBaseModel):
                     j = lines.index('> <Gold.Score>')
                     self.headers = ['Filename'] + lines[j + 1].strip().split()
                     data = [mol2] + lines[j + 2].split()
+                    # This the hierarchy requested by tkintertable
+                    # Each entry must be tagged by its header
                     parsed[i] = OrderedDict(OrderedDict((k, v) for (k, v) in
                                                         zip(self.headers, data)))
                     i += 1
                     parsed_filenames.add(mol2)
+                    # Since the file is open, why not get metadata now?
                     k = lines.index('@<TRIPOS>COMMENT')
                     metadata[os.path.basename(mol2)] = lines[k + 1:]
 
@@ -95,7 +132,7 @@ class GoldController(GaudiViewBaseController):
 
     def __init__(self, *args, **kwargs):
         GaudiViewBaseController.__init__(self, *args, **kwargs)
-        self.HAS_SELECTION = False
+        self.HAS_SELECTION = False  # disable selection box in GUI
 
     def display(self, *keys):
         for k in keys:
@@ -109,6 +146,12 @@ class GoldController(GaudiViewBaseController):
                 self.displayed.extend(self.molecules[k])
 
     def process(self, key):
+        """
+        As of now, we only process rotamer info. We do so by parsing
+        the annotated coordinates in section `Gold.Protein.RotatedAtoms`
+        and applying the transformation in a per-atom basis. Pretty rough,
+        but fast!
+        """
         if not self.model.protein:
             return
         ligand = self.molecules[key]
@@ -116,7 +159,9 @@ class GoldController(GaudiViewBaseController):
         try:
             start = mol2data.index('> <Gold.Protein.RotatedAtoms>')
         except ValueError:
-            print "Sorry, no rotamer info available in mol2"
+            msg = "Sorry, no rotamer info available in mol2"
+            self.gui.error(msg)
+            print msg
         else:
             rotamers = mol2data[start + 1:]
             modified_residues = set()
@@ -128,7 +173,7 @@ class GoldController(GaudiViewBaseController):
                     self.model.protein, fields[0:3], fields[18])
                 if atom:
                     modified_residues.add(atom.residue)
-            for res in modified_residues:
+            for res in modified_residues:  # display the whole residue!
                 for a in res.atoms:
                     a.display = 1
 
@@ -137,6 +182,10 @@ class GoldController(GaudiViewBaseController):
 
     @staticmethod
     def update_rotamers(protein, xyz, atomnum):
+        """
+        Apply new coordinates `xyz` to selected atom with
+        serialNumber `atomnum` in `protein`.
+        """
         try:
             atom = next(a for prot in protein for a in prot.atoms
                         if a.serialNumber == int(atomnum))
