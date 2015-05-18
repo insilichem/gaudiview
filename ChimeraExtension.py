@@ -11,6 +11,12 @@
 ##############
 
 import chimera.extension
+from OpenSave import OpenModeless
+
+FILTERS = [
+    ("GAUDI results", ["*.gaudi", "*.gaudi.yaml"]),
+    ("GOLD results", ["*.conf"])
+]
 
 
 class GaudiViewEMO(chimera.extension.EMO):
@@ -25,8 +31,13 @@ class GaudiViewEMO(chimera.extension.EMO):
         return ['GAUDI']
 
     def activate(self):
-        self.module('gui').browse()
-        return None
+        OpenModeless(command=self._browse, title="Open input file",
+                     filters=FILTERS, dialogKw={'oneshot': 1}, historyID="GaudiView")
+
+    def _browse(self, okayed, dialog):
+        if okayed:
+            for path, format in dialog.getPathsAndTypes():
+                self.module('gui').GaudiViewDialog(path, format)
 
 emo = GaudiViewEMO(__file__)
 chimera.extension.manager.registerExtension(emo)

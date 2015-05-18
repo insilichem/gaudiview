@@ -17,24 +17,30 @@ import itertools
 import os
 # Chimera
 import chimera
+# Internal dependencies
+from gaudiview.extensions.base import GaudiViewBaseModel, GaudiViewBaseController
 
 
 def load(*args, **kwargs):
-    return GoldData(*args, **kwargs)
+    return GoldController(model=GoldModel, *args, **kwargs)
 
 
-class GoldData(object):
+class GoldModel(GaudiViewBaseModel):
 
-    def __init__(self, path):
+    def __init__(self, path, *args, **kwargs):
         self.path = path
         self.basedir, self.file = os.path.split(path)
-        self.metadata = {}
-        self.data, self.commonpath = self.parse()
+        self.molecules = {}
+        self.data, self.metadata, self.commonpath, self.proteinpath = self.parse()
+        self.protein = None
+        if self.proteinpath:
+            self.protein = chimera.openModels.open(
+                self.proteinpath, shareXform=True)
 
     def parse(self):
         ligand_basepaths = []
         basedirs = []
-        self.proteinpath = None
+        proteinpath = None
         with open(self.path) as f:
             for line in f.readlines():
                 if line.startswith('ligand_data_file'):
@@ -43,9 +49,10 @@ class GoldData(object):
                     basedirs.append(line.split('=')[-1].strip())
                 elif line.startswith('protein_datafile'):
                     proteinpath = line.split('=')[-1].strip()
-                    self.proteinpath = os.path.join(self.basedir, proteinpath)
+                    proteinpath = os.path.join(self.basedir, proteinpath)
         parsed = OrderedDict()
         parsed_filenames = set()
+        metadata = {}
         i = 0
         for base, ligand in itertools.product(basedirs, ligand_basepaths):
             path = os.path.normpath(
@@ -65,17 +72,46 @@ class GoldData(object):
                     i += 1
                     parsed_filenames.add(mol2)
                     k = lines.index('@<TRIPOS>COMMENT')
-                    self.metadata[mol2] = "\n".join(lines[k + 1:])
+                    metadata[os.path.basename(mol2)] = lines[k + 1:]
 
         commonpath = common_path_of_filenames(parsed_filenames)
         for v in parsed.values():
             v['Filename'] = os.path.relpath(v['Filename'], commonpath)
 
-        return parsed, commonpath
+        return parsed, metadata, commonpath, proteinpath
 
-    def update_protein(self, protein, ligand):
-        if not protein:
+    def details(self, key=None):
+        if key:
+            data = "\n  ".join(self.metadata[key])
+        else:
+            try:
+                data = "\n  ".join(self.data['Comments'])
+            except KeyError:
+                data = ''
+        return data
+
+
+class GoldController(GaudiViewBaseController):
+
+    def __init__(self, *args, **kwargs):
+        GaudiViewBaseController.__init__(self, *args, **kwargs)
+        self.HAS_SELECTION = False
+
+    def display(self, *keys):
+        for k in keys:
+            try:
+                self.show(*self.molecules[k])
+            except KeyError:
+                path = os.path.join(self.model.commonpath, k)
+                self.molecules[k] = chimera.openModels.open(
+                    path, shareXform=True)
+            finally:
+                self.displayed.extend(self.molecules[k])
+
+    def process(self, key):
+        if not self.model.protein:
             return
+        ligand = self.molecules[key]
         mol2data = ligand[0].mol2data
         try:
             start = mol2data.index('> <Gold.Protein.RotatedAtoms>')
@@ -83,19 +119,21 @@ class GoldData(object):
             print "Sorry, no rotamer info available in mol2"
         else:
             rotamers = mol2data[start + 1:]
-            # chimera.runCommand(
-            # '~show ' + ' '.join(['#{}'.format(m.id) for m in protein]))
             modified_residues = set()
             for line in rotamers:
                 if line.startswith('> '):
                     break
                 fields = line.strip().split()
-                atom = self.update_rotamers(protein, fields[0:3], fields[18])
+                atom = self.update_rotamers(
+                    self.model.protein, fields[0:3], fields[18])
                 if atom:
                     modified_residues.add(atom.residue)
             for res in modified_residues:
                 for a in res.atoms:
                     a.display = 1
+
+    def get_table_dict(self):
+        return self.model.data
 
     @staticmethod
     def update_rotamers(protein, xyz, atomnum):

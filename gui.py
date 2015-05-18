@@ -13,13 +13,13 @@
 # Python
 import os
 import Tkinter
-import importlib
 # Chimera
 import chimera
 from chimera.baseDialog import ModelessDialog
 from Midas import MidasError
 # Internal dependencies
 from . import tables
+from .extensions.base import load_controller
 
 ui = None
 
@@ -32,24 +32,6 @@ def showUI(callback=None):
     if callback:
         ui.addCallback(callback)
 
-Filters = [
-    ("GAUDI results", ["*.gaudi", "*.gaudi.yaml"]),
-    ("GOLD results", ["*.conf"])
-]
-
-
-def browse():
-    from OpenSave import OpenModeless
-    OpenModeless(command=_browse, title="Open Gaudi results file",
-                 filters=Filters, dialogKw={'oneshot': 1}, historyID="GaudiView")
-
-
-def _browse(okayed, dialog):
-    if not okayed:
-        return
-    for path, format in dialog.getPathsAndTypes():
-        GaudiViewDialog(path, format)
-
 
 class GaudiViewDialog(ModelessDialog):
     buttons = ("OK", "Close")
@@ -58,46 +40,27 @@ class GaudiViewDialog(ModelessDialog):
     SELECTION_CHANGED = "GaudiViewSelectionChanged"
     DBL_CLICK = "GaudiViewDoubleClick"
     EXIT = "GaudiViewExited"
-    FORMATS = {
-        'GAUDI results': 'gaudiview.gaudi',
-        'GOLD results': 'gaudiview.gold'
-    }
 
-    def __init__(self, path, format, *args, **kw):
-        self.path = path
-        self.basedir, self.file = os.path.split(path)
-        self.format = format
-
-        module = importlib.import_module(self.FORMATS[format])
-        self.parser = module.load(path)
-        self.data = self.parser.data
-        self.commonpath = self.parser.commonpath
-
-        self.molecules = {}
-        self.displayed_molecules = []
-        self.selected_molecules = []
-        self.protein = None
-
+    def __init__(self, path, format, *args, **kwarg):
         # GUI init
-        self.title = 'GaudiView - {}'.format(path)
-        ModelessDialog.__init__(self)
-        chimera.extension.manager.registerInstance(self)
+        self.title = 'GaudiView'
+        self.controller = load_controller(path=path, format=format, gui=self)
 
         # Triggers
         self.triggers = chimera.triggerSet.TriggerSet()
         self.triggers.addTrigger(self.SELECTION_CHANGED)
         self.triggers.addTrigger(self.DBL_CLICK)
         self.triggers.addHandler(
-            self.SELECTION_CHANGED, self._sel_changed, None)
-        self.uiMaster().bind("<Configure>", self.on_resize)
+            self.SELECTION_CHANGED, self.controller.selection_changed, None)
+        self.triggers.addHandler(
+            self.DBL_CLICK, self.controller.double_click, None)
 
-        # Open protein, if neede
-        if self.parser.proteinpath:
-            self.open_molecule_path(self.parser.proteinpath)
-            self.protein = self.molecules[self.parser.proteinpath]
-            # Add triggers
-            self.triggers.addHandler(
-                self.DBL_CLICK, self.update_protein, None)
+        # Fire up
+        ModelessDialog.__init__(self)
+        chimera.extension.manager.registerInstance(self)
+
+        # Handle resizing
+        self.uiMaster().bind("<Configure>", self.on_resize)
 
     def fillInUI(self, parent):
         # Create main window
@@ -107,7 +70,7 @@ class GaudiViewDialog(ModelessDialog):
             '<Enter>', lambda event, caller=self.tframe: self.give_focus(event, caller))
         # Fill data in and create table
         self.model = tables.TableModel()
-        self.model.importDict(self.data)
+        self.model.importDict(self.controller.get_table_dict())
         self.table = tables.Table(self.tframe, self.model, editable=False,
                                   gaudiparent=self)
         self.table.createTableFrame()
@@ -123,19 +86,34 @@ class GaudiViewDialog(ModelessDialog):
             row=0, column=0, sticky="ew")
         self.clifield = Tkinter.Entry(self.cliframe)
         self.clifield.grid(row=1, column=0, sticky='nsew')
+        self.clifield.bind('<Return>', self.controller.run_command, None)
+        self.clifield.bind('<KP_Enter>', self.controller.run_command, None)
         self.clibutton = Tkinter.Button(
-            self.cliframe, text="Run", width=5, command=self.cli_callback)
-        self.clibutton.grid(row=1, column=1)
-        self.selectionbool = Tkinter.BooleanVar()
-        self.selectioncheck = Tkinter.Checkbutton(
-            self.cliframe, text="Select in Chimera", variable=self.selectionbool,
-            command=self.select_in_chimera)
-        self.selectioncheck.grid(row=2, column=0, sticky='w')
-        self.clifield.bind('<Return>', self.cli_callback, None)
-        self.clifield.bind('<KP_Enter>', self.cli_callback, None)
+            self.cliframe, text="Run", width=5, command=self.controller.run_command)
+        self.clibutton.grid(row=1, column=1, sticky='news')
+
+        if self.controller.HAS_SELECTION:
+            self.selection_listbox = Tkinter.Listbox(
+                self.cliframe, selectmode=Tkinter.EXTENDED, height=5)
+            self.selection_listbox.grid(row=2, column=0, sticky='nsew')
+            self.selection_listbox.bind('<<ListboxSelect>>',
+                                        self.controller.select_in_chimera)
+
+            self.selectionbool = Tkinter.BooleanVar()
+            self.selectioncheck = Tkinter.Checkbutton(
+                self.cliframe, text="Select in Chimera", variable=self.selectionbool,
+                command=self.controller.select_in_chimera)
+            self.selectioncheck.grid(row=2, column=1, sticky='ew')
+        else:
+            self.selectionbool = Tkinter.BooleanVar()
+            self.selectioncheck = Tkinter.Checkbutton(
+                self.cliframe, text="Select in Chimera", variable=self.selectionbool,
+                command=self.controller.select_in_chimera)
+            self.selectioncheck.grid(row=2, column=0, sticky='ew')
+
         self.cliframe.pack(fill='x')
 
-        if self.parser.metadata:
+        if self.controller.HAS_DETAILS:
             # Details of selected solution
             self.details_frame = Tkinter.Frame(parent)
             self.details_frame.grid_rowconfigure(0, weight=1)
@@ -162,111 +140,38 @@ class GaudiViewDialog(ModelessDialog):
             self.details_frame.pack(fill='x')
 
     def Apply(self):
-        chimera.openModels.close([m_ for p in self.molecules
-                                  for m_ in self.molecules[p] if p not in self.selected_molecules])
+        pass
+        # chimera.openModels.close([m_ for p in self.molecules
+        # for m_ in self.molecules[p] if p not in self.selected_molecules])
 
     def OK(self):
         self.Apply()
         self.destroy()
 
     def Close(self):
-        chimera.openModels.close(
-            [m_ for m in self.molecules.values() for m_ in m])
+        # chimera.openModels.close(
+        #     [m_ for m in self.molecules.values() for m_ in m])
         self.destroy()
-
-    # HANDLERS
-    def open_molecule_path(self, *paths):
-        for p in paths:
-            try:
-                self.show_molecules(*self.molecules[p])
-            except KeyError:
-                self.molecules[p] = chimera.openModels.open(
-                    p, shareXform=True)
-
-    def update_displayed_molecules(self):
-        self.hide_molecules(*self.displayed_molecules)
-        self.open_molecule_path(*self.selected_molecules)
-        self.displayed_molecules.extend([m for p in self.selected_molecules
-                                         for m in self.molecules[p]])
-
-    def update_selected_molecules(self):
-        self.selected_molecules = []
-        for row in self.table.multiplerowlist:
-            try:
-                molpath = self.table.model.data[
-                    self.table.model.getRecName(row)]['Filename']
-            except IndexError:  # click out of boundaries
-                pass
-            else:
-                self.selected_molecules.append(
-                    os.path.normpath(os.path.join(self.commonpath, molpath)))
-
-    def update_details_field(self):
-        self.details_field.config(state=Tkinter.NORMAL)
-        self.details_field.delete(1.0, Tkinter.END)
-        for m in self.selected_molecules:
-            try:
-                data = self.parser.metadata[m]
-            except KeyError:
-                self.details_field.insert(Tkinter.END, m + "\n")
-                self.details_field.insert(
-                    Tkinter.END, "No metadata available\n\n")
-            else:
-                self.details_field.insert(Tkinter.END, m + "\n")
-                self.details_field.insert(Tkinter.END, data + "\n\n")
-
-        self.details_field.config(state=Tkinter.DISABLED)
-
-    def hide_molecules(self, *mols):
-        for m in mols:
-            m.display = 0
-
-    def show_molecules(self, *mols):
-        for m in mols:
-            m.display = 1
-
-    def _sel_changed(self, trigger, data, row):
-        self.update_selected_molecules()
-        self.update_displayed_molecules()
-        if self.parser.metadata:
-            self.update_details_field()
-        self.select_in_chimera()
-        self.cli_callback()
 
     def on_resize(self, event):
         self.width = event.width
         self.height = event.height
-        self.tframe.pack(expand=True, fill='both')
+        # self.tframe.pack(expand=True, fill='both')
 
-    def update_protein(self, trigger, data, row):
-        molpath = self.table.model.data[
-            self.table.model.getRecName(row)]['Filename']
-        ligand = self.molecules[
-            os.path.normpath(os.path.join(self.commonpath, molpath))]
-        self.parser.update_protein(self.protein, ligand)
-
-    def cli_callback(self, *args, **kwargs):
-        command = self.clifield.get()
-        try:
-            chimera.runCommand(command)
-        except MidasError as e:
-            print e
-            self.gui_error(e.__str__())
-
-    def select_in_chimera(self):
-        chimera.selection.clearCurrent()
-        if self.selectionbool.get():
-            for m in self.selected_molecules:
-                chimera.selection.addCurrent(self.molecules[m])
+    def update_details_field(self, info="No info available"):
+        self.details_field.config(state=Tkinter.NORMAL)
+        self.details_field.delete(1.0, Tkinter.END)
+        self.details_field.insert(Tkinter.END, info)
+        self.details_field.config(state=Tkinter.DISABLED)
 
     @staticmethod
     def give_focus(event, caller=None):
         caller.focus_set()
 
     @staticmethod
-    def gui_info(text):
+    def info(text):
         chimera.statusline.show_message(text, color='black', blankAfter=3)
 
     @staticmethod
-    def gui_error(text):
+    def error(text):
         chimera.statusline.show_message(text, color='red', blankAfter=3)
