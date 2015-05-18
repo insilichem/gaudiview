@@ -140,23 +140,23 @@ class GaudiViewDialog(ModelessDialog):
             self.details_frame.pack(fill='x')
 
     def Apply(self):
-        pass
-        # chimera.openModels.close([m_ for p in self.molecules
-        # for m_ in self.molecules[p] if p not in self.selected_molecules])
+        chimera.openModels.close(
+            [m_ for p in self.controller.molecules
+             for m_ in self.controller.model.molecules[p]
+             if p not in self.controller.selected])
 
     def OK(self):
         self.Apply()
         self.destroy()
 
     def Close(self):
-        # chimera.openModels.close(
-        #     [m_ for m in self.molecules.values() for m_ in m])
+        chimera.openModels.close(
+            [m_ for m in self.controller.model.molecules.values() for m_ in m])
         self.destroy()
 
     def on_resize(self, event):
         self.width = event.width
         self.height = event.height
-        # self.tframe.pack(expand=True, fill='both')
 
     def update_details_field(self, info="No info available"):
         self.details_field.config(state=Tkinter.NORMAL)
