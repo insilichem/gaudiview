@@ -61,6 +61,8 @@ class GaudiViewDialog(ModelessDialog):
             self.SELECTION_CHANGED, self.controller.selection_changed, None)
         self.triggers.addHandler(
             self.DBL_CLICK, self.controller.double_click, None)
+        # Disable ksdssp
+        chimera.triggers.addHandler("Model", self.suppressKsdssp, None)
 
         # Fire up
         ModelessDialog.__init__(self)
@@ -201,3 +203,8 @@ class GaudiViewDialog(ModelessDialog):
     @staticmethod
     def error(text):
         chimera.statusline.show_message(text, color='red', blankAfter=3)
+
+    @staticmethod
+    def suppressKsdssp(trigName, myData, molecules):
+        for m in molecules.created:
+            m.structureAssigned = True
