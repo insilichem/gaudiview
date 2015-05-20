@@ -131,11 +131,14 @@ class GaudiController(GaudiViewBaseController):
             finally:
                 self.displayed.extend(self.molecules[k])
         else:
+            active = self.gui.selection_listbox.curselection()
             self.gui.selection_listbox.delete(0, 'end')
             try:
                 for m in self.molecules[k]:
                     self.gui.selection_listbox.insert(
                         'end', os.path.basename(m.openedAs[0]))
+                for i in active:
+                    self.gui.selection_listbox.selection_set(i)
             except UnboundLocalError:
                 pass
 
