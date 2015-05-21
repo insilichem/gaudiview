@@ -90,7 +90,7 @@ class GoldModel(GaudiViewBaseModel):
         i = 0
         for base, ligand in itertools.product(basedirs, ligand_basepaths):
             path = os.path.normpath(
-                os.path.join(self.basedir, base, '*_' + ligand + '_*_*.mol2'))
+                os.path.join(self.basedir, base, '*_' + os.path.basename(ligand) + '_*_*.mol2'))
             solutions = glob.glob(path)
             for mol2 in solutions:
                 mol2 = os.path.realpath(mol2)  # discard symlinks
