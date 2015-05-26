@@ -43,6 +43,7 @@ class GaudiModel(GaudiViewBaseModel):
 
     def __init__(self, path, *args, **kwargs):
         self.path = path
+        self.basedir = os.path.dirname(path)
         self.data, self.table_data, self.headers = self.parse()
         self.metadata = {}
         self.molecules = {}
@@ -112,6 +113,7 @@ class GaudiController(GaudiViewBaseController):
 
     def __init__(self, *args, **kwargs):
         GaudiViewBaseController.__init__(self, *args, **kwargs)
+        self.basedir = self.model.basedir
 
     def display(self, *keys):
         """
@@ -125,7 +127,8 @@ class GaudiController(GaudiViewBaseController):
             try:
                 self.show(*self.model.molecules[k])
             except KeyError:
-                mol2, meta = self.model.parse_zip(k)
+                mol2, meta = self.model.parse_zip(
+                    os.path.join(self.basedir, k))
                 self.molecules[k] = mol2
                 self.metadata[k] = meta
             finally:
