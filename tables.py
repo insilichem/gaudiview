@@ -22,7 +22,7 @@ class Table(TableCanvas):
     def set_defaults(self):
         """Set default settings"""
         self.cellwidth = 60
-        self.maxcellwidth = 300
+        self.maxcellwidth = 500
         self.rowheight = 20
         self.horizlines = 1
         self.vertlines = 0

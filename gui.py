@@ -115,6 +115,7 @@ class GaudiViewDialog(ModelessDialog):
                 self.cliframe, text="Select in Chimera", variable=self.selectionbool,
                 command=self.controller.select_in_chimera)
             self.selectioncheck.grid(row=2, column=1, sticky='ew')
+            self.selectioncheck.select()
         # for single-molecule-per-entry formats (GOLD),
         # a single tickbox is enough
         else:
@@ -122,7 +123,7 @@ class GaudiViewDialog(ModelessDialog):
             self.selectioncheck = Tkinter.Checkbutton(
                 self.cliframe, text="Select in Chimera", variable=self.selectionbool,
                 command=self.controller.select_in_chimera)
-            self.selectioncheck.grid(row=2, column=0, sticky='ew')
+            self.selectioncheck.grid(row=2, column=0, sticky='w')
 
         self.cliframe.pack(fill='x')
 
@@ -151,6 +152,9 @@ class GaudiViewDialog(ModelessDialog):
             self.details_frame.bind(
                 '<Enter>', lambda event, caller=self.details_frame: self.give_focus(event, caller))
             self.details_frame.pack(fill='x')
+
+        if self.controller.HAS_MORE_GUI:
+            self.controller.extend_gui()
 
     def Apply(self):
         """

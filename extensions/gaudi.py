@@ -15,6 +15,7 @@ from collections import OrderedDict
 import zipfile
 import tempfile
 import os
+import Tkinter
 # Chimera
 import chimera
 import Rotamers
@@ -22,6 +23,7 @@ import Rotamers
 import yaml
 # Internal dependencies
 from gaudiview.extensions.base import GaudiViewBaseModel, GaudiViewBaseController
+from gaudiview.extensions import dsx
 
 
 def load(*args, **kwargs):
@@ -114,6 +116,7 @@ class GaudiController(GaudiViewBaseController):
     def __init__(self, *args, **kwargs):
         GaudiViewBaseController.__init__(self, *args, **kwargs)
         self.basedir = self.model.basedir
+        self.HAS_MORE_GUI = True
 
     def display(self, *keys):
         """
@@ -137,15 +140,17 @@ class GaudiController(GaudiViewBaseController):
             active = self.gui.selection_listbox.curselection()
             self.gui.selection_listbox.delete(0, 'end')
             try:
-                for m in self.molecules[k]:
+                for m in sorted(self.molecules[k], key=lambda m: m.openedAs[0]):
                     self.gui.selection_listbox.insert(
                         'end', os.path.basename(m.openedAs[0]))
                 for i in active:
                     self.gui.selection_listbox.selection_set(i)
             except UnboundLocalError:
                 pass
+            else:
+                return self.molecules[keys[-1]]
 
-    def process(self, key):
+    def process(self, key, **kwargs):
         """
         Display metadata for each solution.
 
@@ -154,28 +159,22 @@ class GaudiController(GaudiViewBaseController):
             Parse metadata files and display their info: H bonds,
             clashes, distances... and every objective.
         """
-        pass
-        # if not protein:
-        #     return
-        # mol2data = ligand[0].mol2data
-        # try:
-        #     start = mol2data.index('GAUDI.rotamers')
-        #     end = mol2data.index('/GAUDI.rotamers')
-        # except ValueError:
-        #     print "Sorry, no rotamer info available in mol2"
-        # else:
-        #     rotamers = mol2data[start + 1:end]
-        #     for line in rotamers:
-        #         line.strip()
-        # if line.startswith('#'):
-        #             continue
-        #         self.update_rotamers(*line.split())
+
+        self._get_dsx_score(keys=[key])
 
     def get_table_dict(self):
         return self.model.table_data
 
+    def extend_gui(self):
+        self.gui.dsx_bool = Tkinter.BooleanVar()
+        self.gui.dsx_check = Tkinter.Checkbutton(
+            self.gui.cliframe, text="Get DSX Score", variable=self.gui.dsx_bool,
+            command=self._get_dsx_score)
+        self.gui.dsx_check.grid(row=2, column=1, sticky='ew')
+        self.gui.cliframe.pack(fill='x')
+
     @staticmethod
-    def update_rotamers(pos, lib, restype, *chis):
+    def _update_rotamers(pos, lib, restype, *chis):
         """ Since the individuals are expressed before writing them down,
         theoretically each protein already carries the applied rotamers.
         This won't be needed?
@@ -196,3 +195,19 @@ class GaudiController(GaudiViewBaseController):
             Rotamers.useRotamer(res, [rotamer])
             for a in res.atoms:
                 a.display = 1
+
+    def _get_dsx_score(self, keys=None):
+        if 'DSX_score' not in self.gui.table.model.columnlabels:
+            self.gui.table.addColumn('DSX_score')
+            self.gui.table.tablecolheader.reversedcols['DSX_score'] = 0
+        if keys is None:
+            data = self.gui.table.model.data.iteritems()
+        else:
+            data = [(k, self.gui.table.model.data[k]) for k in keys]
+        for k, d in data:
+            if 'DSX_score' not in d:
+                mols = sorted(self.display(k), key=lambda m: len(m.atoms))
+                dsx_score = dsx.DSXPlugin()
+                score = dsx_score.do(mols[1].openedAs[0], mols[0].openedAs[0])
+                d['DSX_score'] = score
+                self.gui.table.redrawTable()

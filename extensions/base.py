@@ -25,7 +25,8 @@ import os
 
 FORMATS = {
     'GAUDI results': 'gaudiview.extensions.gaudi',
-    'GOLD results': 'gaudiview.extensions.gold'
+    'GOLD results': 'gaudiview.extensions.gold',
+    'Mol2 files': 'gaudiview.extensions.mol2'
 }
 
 
@@ -59,6 +60,7 @@ class GaudiViewBaseController(object):
         self.displayed = []
         self.HAS_DETAILS = True
         self.HAS_SELECTION = True
+        self.HAS_MORE_GUI = False
 
     def update_selected(self):
         """
@@ -86,7 +88,14 @@ class GaudiViewBaseController(object):
         except IndexError:  # click out of boundaries
             pass
         else:
-            self.process(key)
+            self.process(key, row=row)
+
+    def extend_gui(self):
+        """
+        Adds more stuff to the GUI. Overwrite if needed, and set
+        ``self.HAS_MORE_GUI`` to True.
+        """
+        pass
 
     def selection_changed(self, trigger, data, row):
         """
@@ -175,7 +184,7 @@ class GaudiViewBaseController(object):
         self.show(*self.displayed)
 
     @abc.abstractmethod
-    def display(self, *keys):
+    def display(self, *keys, **kwargs):
         """
         Given a list of keys (usually, the filenames), this method
         will handle opening the molecule files and bringing them to the
@@ -191,7 +200,7 @@ class GaudiViewBaseController(object):
         pass
 
     @abc.abstractmethod
-    def process(self, *keys):
+    def process(self, *keys, **kwargs):
         """
         Given a list of keys (usually, the filenames), this method will
         handle further displaying of info in the GUI. For example, updating
@@ -254,3 +263,12 @@ class GaudiViewBaseModel(object):
     @abc.abstractmethod
     def details(self, record=None):
         pass
+
+
+class GaudiViewBasePlugin(object):
+
+    """
+    Base class for new behaviour plugins. These are classes that can be
+    invoked in controllers to achieve new functionality.
+    """
+    pass

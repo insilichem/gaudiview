@@ -15,10 +15,12 @@ from collections import OrderedDict
 import glob
 import itertools
 import os
+import Tkinter
 # Chimera
 import chimera
 # Internal dependencies
 from gaudiview.extensions.base import GaudiViewBaseModel, GaudiViewBaseController
+from gaudiview.extensions import dsx
 
 
 def load(*args, **kwargs):
@@ -87,7 +89,6 @@ class GoldModel(GaudiViewBaseModel):
         parsed = OrderedDict()
         parsed_filenames = set()
         metadata = {}
-        i = 0
         for base, ligand in itertools.product(basedirs, ligand_basepaths):
             path = os.path.normpath(
                 os.path.join(self.basedir, base, '*_' + os.path.basename(ligand) + '_*_*.mol2'))
@@ -103,9 +104,8 @@ class GoldModel(GaudiViewBaseModel):
                     data = [mol2] + lines[j + 2].split()
                     # This the hierarchy requested by tkintertable
                     # Each entry must be tagged by its header
-                    parsed[i] = OrderedDict(OrderedDict((k, v) for (k, v) in
-                                                        zip(self.headers, data)))
-                    i += 1
+                    parsed[mol2] = OrderedDict(
+                        OrderedDict((k, v) for (k, v) in zip(self.headers, data)))
                     parsed_filenames.add(mol2)
                     # Since the file is open, why not get metadata now?
                     k = lines.index('@<TRIPOS>COMMENT')
@@ -133,6 +133,7 @@ class GoldController(GaudiViewBaseController):
     def __init__(self, *args, **kwargs):
         GaudiViewBaseController.__init__(self, *args, **kwargs)
         self.HAS_SELECTION = False  # disable selection box in GUI
+        self.HAS_MORE_GUI = True
 
     def display(self, *keys):
         for k in keys:
@@ -145,7 +146,10 @@ class GoldController(GaudiViewBaseController):
             finally:
                 self.displayed.extend(self.molecules[k])
 
-    def process(self, key):
+        if keys:
+            return self.molecules[keys[-1]]
+
+    def process(self, key, **kwargs):
         """
         As of now, we only process rotamer info. We do so by parsing
         the annotated coordinates in section `Gold.Protein.RotatedAtoms`
@@ -177,8 +181,34 @@ class GoldController(GaudiViewBaseController):
                 for a in res.atoms:
                     a.display = 1
 
+        self._get_dsx_score(keys=[os.path.join(self.model.commonpath, key)])
+
     def get_table_dict(self):
         return self.model.data
+
+    def extend_gui(self):
+        self.gui.dsx_bool = Tkinter.BooleanVar()
+        self.gui.dsx_check = Tkinter.Checkbutton(
+            self.gui.cliframe, text="Get DSX Score", variable=self.gui.dsx_bool,
+            command=self._get_dsx_score)
+        self.gui.dsx_check.grid(row=2, column=0, sticky='e')
+        self.gui.cliframe.pack(fill='x')
+
+    def _get_dsx_score(self, keys=None):
+        if 'DSX_score' not in self.gui.table.model.columnlabels:
+            self.gui.table.addColumn('DSX_score')
+            self.gui.table.tablecolheader.reversedcols['DSX_score'] = 0
+        if keys is None:
+            data = self.gui.table.model.data.iteritems()
+        else:
+            data = [(k, self.gui.table.model.data[k]) for k in keys]
+        for k, d in data:
+            if 'DSX_score' not in d:
+                mol, = self.display(k)
+                dsx_score = dsx.DSXPlugin()
+                score = dsx_score.do(self.model.proteinpath, mol.openedAs[0])
+                d['DSX_score'] = score
+                self.gui.table.redrawTable()
 
     @staticmethod
     def update_rotamers(protein, xyz, atomnum):
