@@ -47,13 +47,22 @@ class GoldModel(GaudiViewBaseModel):
         self.path = path
         self.basedir, self.file = os.path.split(path)
         self.molecules = {}
-        self.data, self.metadata, self.commonpath, self.proteinpath = self.parse()
+        self.data = None
+        self.metadata = None
+        self.commonpath = None
+        self.proteinpath = None
+        self.rotamers = None
+        # parse() sets all this 'None' names
+        self.parse()
         self.protein = None
         if self.proteinpath:
             self.protein = chimera.openModels.open(
                 self.proteinpath, shareXform=True, temporary=True)[0]
-            self.orig_protein_coords = dict(
-                (a.serialNumber, a.coord().data()) for a in self.protein.atoms)
+            for pos in self.rotamers:
+                residue = next(
+                    r for r in self.protein.residues if r.id.position == pos)
+                self.rotamers[pos] = [(a.serialNumber, a.coord().data())
+                                      for a in residue.atoms]
 
     def parse(self):
         """
@@ -67,6 +76,9 @@ class GoldModel(GaudiViewBaseModel):
         :protein_datafile: Location of the main protein file, usually
                             next to the `gold.conf` file.
 
+        :rotamer_lib:   Indicates the essay contains rotamers. Flag that
+                        and retrieve involved residues.
+
         With those parameters, we can retrieve all the solutions from the
         experiment, since they are mol2 files tagged with `ligand_data_file`.
 
@@ -79,15 +91,20 @@ class GoldModel(GaudiViewBaseModel):
         ligand_basepaths = []
         basedirs = []
         proteinpath = None
+        rotamers = {}
         with open(self.path) as f:
-            for line in f.readlines():
+            for line in f:
                 if line.startswith('ligand_data_file'):
-                    ligand_basepaths.append(line.split()[1][:-5])
+                    ligand_basepaths.append(line.split()[1][: -5])
                 elif line.startswith('directory'):
                     basedirs.append(line.split('=')[-1].strip())
                 elif line.startswith('protein_datafile'):
                     proteinpath = line.split('=')[-1].strip()
                     proteinpath = os.path.join(self.basedir, proteinpath)
+                elif line.startswith('rotamer_lib'):
+                    respos = next(f).split()[-1]
+                    rotamers[int(respos[3:])] = None
+
         parsed = OrderedDict()
         parsed_filenames = set()
         metadata = {}
@@ -105,7 +122,8 @@ class GoldModel(GaudiViewBaseModel):
                     self.headers = ['Filename'] + lines[j + 1].strip().split()
                     data = [mol2] + lines[j + 2].split()
                     # This the hierarchy requested by tkintertable
-                    # Each entry must be tagged by its header
+                    # Each entry must be tagged by its header, such as:
+                    # {row_id(abspath): {column: value, column2: value, ...}}
                     parsed[mol2] = OrderedDict(
                         OrderedDict((k, v) for (k, v) in zip(self.headers, data)))
                     parsed_filenames.add(mol2)
@@ -115,9 +133,15 @@ class GoldModel(GaudiViewBaseModel):
 
         commonpath = common_path_of_filenames(parsed_filenames)
         for v in parsed.values():
+            # Get rid of the common path in absolute name
+            # This leaves a short unique name, adequate for GUI
             v['Filename'] = os.path.relpath(v['Filename'], commonpath)
 
-        return parsed, metadata, commonpath, proteinpath
+        self.data = parsed
+        self.metadata = metadata
+        self.commonpath = commonpath
+        self.proteinpath = proteinpath
+        self.rotamers = rotamers
 
     def details(self, key=None):
         if key:
@@ -165,39 +189,37 @@ class GoldController(GaudiViewBaseController):
         if not keys:
             keys = self.model.data
         self.display(*keys)
-        for key in keys:
-            ligand = self.molecules[key]
-            mol2data = ligand[0].mol2data
-            try:
-                start = mol2data.index('> <Gold.Protein.RotatedAtoms>')
-            except ValueError:
-                msg = "Sorry, no rotamer info available in mol2. Restoring original coords."
-                self.gui.error(msg)
-                print msg
-                for atom in self.model.protein.atoms:
-                    self.update_rotamers(
-                        self.model.protein,
-                        self.model.orig_protein_coords[atom.serialNumber],
-                        atom.serialNumber)
-            else:
-                rotamers = mol2data[start + 1:]
-                modified_residues = set()
-                for line in rotamers:
-                    if line.startswith('> '):
-                        break
-                    fields = line.strip().split()
-                    atom = self.update_rotamers(
-                        self.model.protein, fields[0:3], fields[18])
-                    if atom:
-                        modified_residues.add(atom.residue)
-                # hide already displayed residues
-                for res in self.model.protein.residues:
-                    for a in res.atoms:
-                        a.display = 0
-                # display modified residues
-                for res in modified_residues:
-                    for a in res.atoms:
-                        a.display = 1
+
+        if self.model.rotamers:
+            for key in keys:
+                ligand = self.molecules[key]
+                mol2data = ligand[0].mol2data
+                try:
+                    start = mol2data.index('> <Gold.Protein.RotatedAtoms>')
+                except ValueError:
+                    self.gui.error("Sorry, no rotamer info available in mol2.")
+                    for (pos, (atomnum, coords)) in self.model.rotamers.iteritems():
+                        self.update_rotamers(self.model.protein,
+                                             coords, atomnum)
+                else:
+                    rotamers = mol2data[start + 1:]
+                    modified_residues = set()
+                    for line in rotamers:
+                        if line.startswith('> '):
+                            break
+                        fields = line.strip().split()
+                        atom = self.update_rotamers(
+                            self.model.protein, fields[0:3], fields[18])
+                        if atom:
+                            modified_residues.add(atom.residue)
+                    # hide already displayed residues
+                    for res in self.model.protein.residues:
+                        for a in res.atoms:
+                            a.display = 0
+                    # display modified residues
+                    for res in modified_residues:
+                        for a in res.atoms:
+                            a.display = 1
 
         self._get_dsx_score(keys=keys)
 
