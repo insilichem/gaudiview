@@ -13,6 +13,7 @@
 # Python
 import os
 import subprocess
+import tempfile
 # Internal dependencies
 from gaudiview.extensions.base import GaudiViewBasePlugin
 
@@ -26,10 +27,14 @@ class DSXPlugin(GaudiViewBasePlugin):
     def __init__(self):
         self.binary = os.environ.get('DSX_BINARY')
         self.potentials = os.environ.get('DSX_POTENTIALS')
+        self.oldworkingdir = os.getcwd()
+        self.tempdir = tempfile.gettempdir()
 
     def do(self, protein, ligand,
            I='1', S='1', T0='1.0', T1='1.0', T2='0.0', T3='1.0'):
-
+        # Since DSX outputs to working dir, we better not pollute it
+        # Use tempdir instead and restore later
+        os.chdir(self.tempdir)
         command = [self.binary, '-P', protein, '-L', ligand, '-I', I,
                    '-S', S, '-T0', T0, '-T1', T1, '-T2', T2, '-T3', T3,
                    '-D', self.potentials]
@@ -47,3 +52,5 @@ class DSXPlugin(GaudiViewBasePlugin):
                 score = lines[i + 4].split('|')[3].strip()
                 print "DSX score is", score
                 return float(score)
+        finally:
+            os.chdir(self.oldworkingdir)
