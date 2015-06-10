@@ -38,3 +38,20 @@ Light interface to explore solutions from GAUDIasm and others, inside UCSF Chime
 	runscript setup.py install
 
 5 - Repeat step 4 with [PyYaml](https://pypi.python.org/pypi/PyYAML) source package. Et voilà!
+
+## Special requirements for plugins
+
+**DSX Scoring**. To use DSX with GaudiView, you have to download the binaries from [its webpage](http://pc1664.pharmazie.uni-marburg.de/drugscore/dsx_download.php) and extract its contents whenever you want.
+
+Then, declare these environment variables in your `~/.bashrc`.
+
+```
+#!bash
+
+# DSX Paths
+DSX_BINARY="/path/to/linux64(or 32)/dsx_linux_64(or 32).lnx"; export DSX_BINARY
+DSX_POTENTIALS="/path/to/potentials"; export DSX_POTENTIALS
+```
+Usually, the `potentials` directory is named `pdb_pot_0511` in the compressed file.
+
+Then, save `~/.bashrc` and load the modifications with `source ~/.bashrc`. Start Chimera from the terminal (otherwise it won't read the env vars) and enjoy. 
