@@ -175,10 +175,10 @@ class GoldController(GaudiViewBaseController):
                 self.gui.error(msg)
                 print msg
                 for atom in self.model.protein.atoms:
-                    self.update_rotamers(self.model.protein,
-                                         self.model.orig_protein_coords[
-                                             atom.serialNumber],
-                                         atom.serialNumber)
+                    self.update_rotamers(
+                        self.model.protein,
+                        self.model.orig_protein_coords[atom.serialNumber],
+                        atom.serialNumber)
             else:
                 rotamers = mol2data[start + 1:]
                 modified_residues = set()
@@ -199,8 +199,7 @@ class GoldController(GaudiViewBaseController):
                     for a in res.atoms:
                         a.display = 1
 
-        self._get_dsx_score(
-            keys=keys)
+        self._get_dsx_score(keys=keys)
 
     def get_table_dict(self):
         return self.model.data
