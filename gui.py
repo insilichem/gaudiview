@@ -173,8 +173,7 @@ class GaudiViewDialog(ModelessDialog):
         """
         Close everything amd exit
         """
-        chimera.openModels.close(
-            [m_ for m in self.controller.model.molecules.values() for m_ in m])
+        self.controller.close_all()
         self.destroy()
 
     def on_resize(self, event):

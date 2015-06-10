@@ -63,8 +63,9 @@ class GaudiModel(GaudiViewBaseModel):
         headers = ['Filename'] + data['GAUDI.objectives']
         table_data = OrderedDict()
         for filename, score in data['GAUDI.results'].iteritems():
-            table_data[filename] = OrderedDict((k, v) for (k, v) in
-                                               zip(headers, [filename] + score))
+            table_data[os.path.join(self.basedir, filename)] = \
+                OrderedDict((k, v)
+                            for (k, v) in zip(headers, [filename] + score))
 
         return data, table_data, headers
 
@@ -92,7 +93,8 @@ class GaudiModel(GaudiViewBaseModel):
                 absname = os.path.join(tmp, name)
                 if name.endswith(".mol2"):
                     mol2.extend(
-                        m for m in chimera.openModels.open(absname, shareXform=True))
+                        m for m in chimera.openModels.open(absname, shareXform=True,
+                                                           temporary=True))
                 elif name.endswith(".yaml"):
                     meta.append(yaml.load(absname))
             return mol2, meta
@@ -170,7 +172,7 @@ class GaudiController(GaudiViewBaseController):
         self.gui.dsx_check = Tkinter.Checkbutton(
             self.gui.cliframe, text="Get DSX Score", variable=self.gui.dsx_bool,
             command=self._get_dsx_score)
-        self.gui.dsx_check.grid(row=2, column=1, sticky='ew')
+        self.gui.dsx_check.grid(row=2, column=1, sticky='e')
         self.gui.cliframe.pack(fill='x')
 
     @staticmethod

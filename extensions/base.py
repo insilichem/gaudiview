@@ -70,21 +70,23 @@ class GaudiViewBaseController(object):
         del self.selected[:]
         for row in self.gui.table.multiplerowlist:
             try:
-                molpath = self.gui.table.model.data[
-                    self.gui.table.model.getRecName(row)]['Filename']
+                molpath = self.gui.table.model.getRecName(row)
             except IndexError:  # click out of boundaries
                 pass
             else:
                 self.selected.append(molpath)
 
     # GUI Handlers
+    def close_all(self):
+        chimera.openModels.close(
+            [m_ for m in self.model.molecules.values() for m_ in m])
+
     def double_click(self, trigger, data, row):
         """
         Handles double click in a row. Redirects to :meth:`self.process`.
         """
         try:
-            key = self.gui.table.model.data[
-                self.gui.table.model.getRecName(row)]['Filename']
+            key = self.gui.table.model.getRecName(row)
         except IndexError:  # click out of boundaries
             pass
         else:

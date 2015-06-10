@@ -51,7 +51,9 @@ class GoldModel(GaudiViewBaseModel):
         self.protein = None
         if self.proteinpath:
             self.protein = chimera.openModels.open(
-                self.proteinpath, shareXform=True)
+                self.proteinpath, shareXform=True, temporary=True)[0]
+            self.orig_protein_coords = dict(
+                (a.serialNumber, a.coord().data()) for a in self.protein.atoms)
 
     def parse(self):
         """
@@ -109,7 +111,7 @@ class GoldModel(GaudiViewBaseModel):
                     parsed_filenames.add(mol2)
                     # Since the file is open, why not get metadata now?
                     k = lines.index('@<TRIPOS>COMMENT')
-                    metadata[os.path.basename(mol2)] = lines[k + 1:]
+                    metadata[mol2] = lines[k + 1:]
 
         commonpath = common_path_of_filenames(parsed_filenames)
         for v in parsed.values():
@@ -135,6 +137,10 @@ class GoldController(GaudiViewBaseController):
         self.HAS_SELECTION = False  # disable selection box in GUI
         self.HAS_MORE_GUI = True
 
+    def close_all(self):
+        chimera.openModels.close(
+            [m_ for m in self.model.molecules.values() for m_ in m] + [self.model.protein])
+
     def display(self, *keys):
         for k in keys:
             try:
@@ -142,46 +148,59 @@ class GoldController(GaudiViewBaseController):
             except KeyError:
                 path = os.path.join(self.model.commonpath, k)
                 self.molecules[k] = chimera.openModels.open(
-                    path, shareXform=True)
+                    path, shareXform=True, temporary=True)
             finally:
                 self.displayed.extend(self.molecules[k])
 
         if keys:
             return self.molecules[keys[-1]]
 
-    def process(self, key, **kwargs):
+    def process(self, *keys, **kwargs):
         """
         As of now, we only process rotamer info. We do so by parsing
         the annotated coordinates in section `Gold.Protein.RotatedAtoms`
         and applying the transformation in a per-atom basis. Pretty rough,
         but fast!
         """
-        if not self.model.protein:
-            return
-        ligand = self.molecules[key]
-        mol2data = ligand[0].mol2data
-        try:
-            start = mol2data.index('> <Gold.Protein.RotatedAtoms>')
-        except ValueError:
-            msg = "Sorry, no rotamer info available in mol2"
-            self.gui.error(msg)
-            print msg
-        else:
-            rotamers = mol2data[start + 1:]
-            modified_residues = set()
-            for line in rotamers:
-                if line.startswith('> '):
-                    break
-                fields = line.strip().split()
-                atom = self.update_rotamers(
-                    self.model.protein, fields[0:3], fields[18])
-                if atom:
-                    modified_residues.add(atom.residue)
-            for res in modified_residues:  # display the whole residue!
-                for a in res.atoms:
-                    a.display = 1
+        if not keys:
+            keys = self.model.data
+        self.display(*keys)
+        for key in keys:
+            ligand = self.molecules[key]
+            mol2data = ligand[0].mol2data
+            try:
+                start = mol2data.index('> <Gold.Protein.RotatedAtoms>')
+            except ValueError:
+                msg = "Sorry, no rotamer info available in mol2. Restoring original coords."
+                self.gui.error(msg)
+                print msg
+                for atom in self.model.protein.atoms:
+                    self.update_rotamers(self.model.protein,
+                                         self.model.orig_protein_coords[
+                                             atom.serialNumber],
+                                         atom.serialNumber)
+            else:
+                rotamers = mol2data[start + 1:]
+                modified_residues = set()
+                for line in rotamers:
+                    if line.startswith('> '):
+                        break
+                    fields = line.strip().split()
+                    atom = self.update_rotamers(
+                        self.model.protein, fields[0:3], fields[18])
+                    if atom:
+                        modified_residues.add(atom.residue)
+                # hide already displayed residues
+                for res in self.model.protein.residues:
+                    for a in res.atoms:
+                        a.display = 0
+                # display modified residues
+                for res in modified_residues:
+                    for a in res.atoms:
+                        a.display = 1
 
-        self._get_dsx_score(keys=[os.path.join(self.model.commonpath, key)])
+        self._get_dsx_score(
+            keys=keys)
 
     def get_table_dict(self):
         return self.model.data
@@ -190,7 +209,7 @@ class GoldController(GaudiViewBaseController):
         self.gui.dsx_bool = Tkinter.BooleanVar()
         self.gui.dsx_check = Tkinter.Checkbutton(
             self.gui.cliframe, text="Get DSX Score", variable=self.gui.dsx_bool,
-            command=self._get_dsx_score)
+            command=self.process)
         self.gui.dsx_check.grid(row=2, column=0, sticky='e')
         self.gui.cliframe.pack(fill='x')
 
@@ -201,7 +220,7 @@ class GoldController(GaudiViewBaseController):
         if keys is None:
             data = self.gui.table.model.data.iteritems()
         else:
-            data = [(k, self.gui.table.model.data[k]) for k in keys]
+            data = ((k, self.gui.table.model.data[k]) for k in keys)
         for k, d in data:
             if 'DSX_score' not in d:
                 mol, = self.display(k)
@@ -217,7 +236,7 @@ class GoldController(GaudiViewBaseController):
         serialNumber `atomnum` in `protein`.
         """
         try:
-            atom = next(a for prot in protein for a in prot.atoms
+            atom = next(a for a in protein.atoms
                         if a.serialNumber == int(atomnum))
         except StopIteration:
             pass
