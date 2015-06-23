@@ -25,8 +25,11 @@ class DSXPlugin(GaudiViewBasePlugin):
     """
 
     def __init__(self):
-        self.binary = os.environ.get('DSX_BINARY')
-        self.potentials = os.environ.get('DSX_POTENTIALS')
+        try:
+            self.binary = os.environ['DSX_BINARY']
+            self.potentials = os.environ['DSX_POTENTIALS']
+        except KeyError:
+            raise KeyError("Could not find DSX environment variables.")
         self.oldworkingdir = os.getcwd()
         self.tempdir = tempfile.gettempdir()
 

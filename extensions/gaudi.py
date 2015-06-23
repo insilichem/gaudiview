@@ -172,7 +172,7 @@ class GaudiController(GaudiViewBaseController):
         self.gui.dsx_check = Tkinter.Checkbutton(
             self.gui.cliframe, text="Get DSX Score", variable=self.gui.dsx_bool,
             command=self._get_dsx_score)
-        self.gui.dsx_check.grid(row=2, column=1, sticky='e')
+        self.gui.dsx_check.grid(row=2, column=1, sticky='sew')
         self.gui.cliframe.pack(fill='x')
 
     @staticmethod
