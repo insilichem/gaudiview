@@ -50,6 +50,10 @@ class GaudiModel(GaudiViewBaseModel):
         self.metadata = {}
         self.molecules = {}
         self.tempdir = tempfile.mkdtemp('gaudiview')
+        try:
+            self.index = max(a for (a, b) in chimera.openModels.listIds())
+        except ValueError:
+            self.index = -1
 
     def parse(self):
         """
@@ -80,6 +84,7 @@ class GaudiModel(GaudiViewBaseModel):
         except zipfile.BadZipfile:
             print "Not a valid GAUDI result"
         else:
+            self.index += 1
             tmp = os.path.join(
                 self.tempdir, os.path.splitext(os.path.basename(path))[0])
             try:
@@ -89,12 +94,16 @@ class GaudiModel(GaudiViewBaseModel):
             z.extractall(tmp)
             mol2 = []
             meta = z.namelist()
+            subid = 0
             for name in os.listdir(tmp):
                 absname = os.path.join(tmp, name)
                 if name.endswith(".mol2"):
                     mol2.extend(
-                        m for m in chimera.openModels.open(absname, shareXform=True,
+                        m for m in chimera.openModels.open(absname, baseId=self.index,
+                                                           subid=subid,
+                                                           shareXform=True,
                                                            temporary=True))
+                    subid += 1
                 elif name.endswith(".yaml"):
                     meta.append(yaml.load(absname))
             return mol2, meta
