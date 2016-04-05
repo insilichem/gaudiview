@@ -10,11 +10,11 @@
 # Web: https://bitbucket.org/jrgp/gaudiview
 ##############
 
-import chimera.extension
+import chimera
 from OpenSave import OpenModeless
 
 FILTERS = [
-    ("GAUDI results", ["*.gaudi", "*.gaudi.yaml"]),
+    ("GAUDI results", ["*.gaudi-output"]),
     ("GOLD results", ["*.conf"])
 ]
 
@@ -28,7 +28,7 @@ class GaudiViewEMO(chimera.extension.EMO):
         return "Light interface to explore solutions from GAUDIasm and more"
 
     def categories(self):
-        return ['GAUDI']
+        return ['InsiliChem']
 
     def activate(self):
         OpenModeless(command=self._browse, title="Open input file",
@@ -36,8 +36,21 @@ class GaudiViewEMO(chimera.extension.EMO):
 
     def _browse(self, okayed, dialog):
         if okayed:
-            for path, format in dialog.getPathsAndTypes():
-                self.module('gui').GaudiViewDialog(path, format)
+            for path, filetype in dialog.getPathsAndTypes():
+                self.gaudiview_open(path, filetype)
+
+    def gaudiview_open(self, path, filetype):
+        self.module('gui').GaudiViewDialog(path, filetype)
+
+    def gaudiview_open_gaudi(self, path):
+        self.module('gui').GaudiViewDialog(path, "GAUDI results")
+
+    def gaudiview_open_gold(self, path):
+        self.module('gui').GaudiViewDialog(path, "GOLD results")
 
 emo = GaudiViewEMO(__file__)
 chimera.extension.manager.registerExtension(emo)
+chimera.fileInfo.register("GAUDI output", emo.gaudiview_open_gaudi, ['.gaudi-output'],
+                          ['GAUDI output'], category=chimera.FileInfo.STRUCTURE)
+chimera.fileInfo.register("GOLD output", emo.gaudiview_open_gold, ['.conf'],
+                          ['GOLD output'], category=chimera.FileInfo.STRUCTURE)

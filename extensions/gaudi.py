@@ -170,8 +170,8 @@ class GaudiController(GaudiViewBaseController):
             Parse metadata files and display their info: H bonds,
             clashes, distances... and every objective.
         """
-
-        self._get_dsx_score(keys=[key])
+        pass
+        # self._get_dsx_score(keys=[key])
 
     def get_table_dict(self):
         return self.model.table_data

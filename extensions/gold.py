@@ -21,6 +21,7 @@ import chimera
 # Internal dependencies
 from gaudiview.extensions.base import GaudiViewBaseModel, GaudiViewBaseController
 from gaudiview.extensions import dsx
+from gaudiview.gui import info, error
 
 
 def load(*args, **kwargs):
@@ -59,8 +60,7 @@ class GoldModel(GaudiViewBaseModel):
             self.protein = chimera.openModels.open(
                 self.proteinpath, shareXform=True, temporary=True)[0]
             for pos in self.rotamers:
-                residue = next(
-                    r for r in self.protein.residues if r.id.position == pos)
+                residue = next(r for r in self.protein.residues if r.id.position == pos)
                 self.rotamers[pos] = [(a.serialNumber, a.coord().data())
                                       for a in residue.atoms]
 
@@ -95,7 +95,7 @@ class GoldModel(GaudiViewBaseModel):
         with open(self.path) as f:
             for line in f:
                 if line.startswith('ligand_data_file'):
-                    ligand_basepaths.append(line.split()[1][: -5])
+                    ligand_basepaths.append(' '.join(line.split()[1:-1]).rstrip('.mol2'))
                 elif line.startswith('directory'):
                     basedirs.append(line.split('=')[-1].strip())
                 elif line.startswith('protein_datafile'):
@@ -109,9 +109,12 @@ class GoldModel(GaudiViewBaseModel):
         parsed_filenames = set()
         metadata = {}
         for base, ligand in itertools.product(basedirs, ligand_basepaths):
-            path = os.path.normpath(
-                os.path.join(self.basedir, base, '*_' + os.path.basename(ligand) + '_*_*.mol2'))
+            path = os.path.normpath(os.path.join(self.basedir, base,
+                                                 '*_' + os.path.basename(ligand) + '_*_*.mol2'))
             solutions = glob.glob(path)
+            if not solutions:
+                raise chimera.UserError("Solution set for {} was not found. "
+                                        "Check paths in your gold.conf".format(ligand))
             for mol2 in solutions:
                 mol2 = os.path.realpath(mol2)  # discard symlinks
                 if mol2 in parsed_filenames:
@@ -162,8 +165,8 @@ class GoldController(GaudiViewBaseController):
         self.HAS_MORE_GUI = True
 
     def close_all(self):
-        chimera.openModels.close(
-            [m_ for m in self.model.molecules.values() for m_ in m] + [self.model.protein])
+        chimera.openModels.close([m_ for m in self.model.molecules.values()
+                                  for m_ in m] + [self.model.protein])
 
     def display(self, *keys):
         for k in keys:
@@ -171,8 +174,7 @@ class GoldController(GaudiViewBaseController):
                 self.show(*self.molecules[k])
             except KeyError:
                 path = os.path.join(self.model.commonpath, k)
-                self.molecules[k] = chimera.openModels.open(
-                    path, shareXform=True, temporary=True)
+                self.molecules[k] = chimera.openModels.open(path, shareXform=True, temporary=True)
             finally:
                 self.displayed.extend(self.molecules[k])
 
@@ -199,8 +201,7 @@ class GoldController(GaudiViewBaseController):
                 except ValueError:
                     self.gui.error("Sorry, no rotamer info available in mol2.")
                     for (pos, (atomnum, coords)) in self.model.rotamers.iteritems():
-                        self.update_rotamers(self.model.protein,
-                                             coords, atomnum)
+                        self.update_rotamers(self.model.protein, coords, atomnum)
                 else:
                     rotamers = mol2data[start + 1:]
                     modified_residues = set()
@@ -221,16 +222,15 @@ class GoldController(GaudiViewBaseController):
                         for a in res.atoms:
                             a.display = 1
 
-        self._get_dsx_score(keys=keys)
+        # self._get_dsx_score(keys=keys)
 
     def get_table_dict(self):
         return self.model.data
 
     def extend_gui(self):
         self.gui.dsx_bool = Tkinter.BooleanVar()
-        self.gui.dsx_check = Tkinter.Checkbutton(
-            self.gui.cliframe, text="Get DSX Score", variable=self.gui.dsx_bool,
-            command=self.process)
+        self.gui.dsx_check = Tkinter.Checkbutton(self.gui.cliframe, text="Get DSX Score",
+                                                 variable=self.gui.dsx_bool, command=self.process)
         self.gui.dsx_check.grid(row=2, column=0, sticky='e')
         self.gui.cliframe.pack(fill='x')
 

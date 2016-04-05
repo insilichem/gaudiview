@@ -16,7 +16,7 @@ import subprocess
 import tempfile
 # Internal dependencies
 from gaudiview.extensions.base import GaudiViewBasePlugin
-
+from gaudiview.gui import error, info
 
 class DSXPlugin(GaudiViewBasePlugin):
 
@@ -29,22 +29,23 @@ class DSXPlugin(GaudiViewBasePlugin):
             self.binary = os.environ['DSX_BINARY']
             self.potentials = os.environ['DSX_POTENTIALS']
         except KeyError:
-            raise KeyError("Could not find DSX environment variables.")
-        self.oldworkingdir = os.getcwd()
-        self.tempdir = tempfile.gettempdir()
+            info("Warning: Could not find DSX environment variables.")
+        else:
+            self.oldworkingdir = os.getcwd()
+            self.tempdir = tempfile.gettempdir()
 
     def do(self, protein, ligand,
-           I='1', S='1', T0='1.0', T1='1.0', T2='0.0', T3='1.0'):
+           I='1', S='1', T0='1.0', T1='0.0', T2='0.0', T3='1.0', T4='0.0'):
         # Since DSX outputs to working dir, we better not pollute it
         # Use tempdir instead and restore later
         os.chdir(self.tempdir)
         command = [self.binary, '-P', protein, '-L', ligand, '-I', I,
-                   '-S', S, '-T0', T0, '-T1', T1, '-T2', T2, '-T3', T3,
+                   '-S', S, '-T0', T0, '-T1', T1, '-T2', T2, '-T3', T3, '-T4', T4,
                    '-D', self.potentials]
         try:
             stream = subprocess.check_output(command, universal_newlines=True)
         except subprocess.CalledProcessError:
-            print "Could not run", command
+            error("ERROR: Could not run " + command, color='red')
         else:
             # 1. Get output filename from stdout (located at working directory)
             # 2. Find line '@RESULTS' and go to sixth line below
@@ -53,7 +54,7 @@ class DSXPlugin(GaudiViewBasePlugin):
                 lines = f.read().splitlines()
                 i = lines.index('@RESULTS')
                 score = lines[i + 4].split('|')[3].strip()
-                print "DSX score is", score
+                info("DSX score is " + score)
                 return float(score)
         finally:
             os.chdir(self.oldworkingdir)

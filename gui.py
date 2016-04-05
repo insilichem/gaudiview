@@ -201,15 +201,18 @@ class GaudiViewDialog(ModelessDialog):
 
     @staticmethod
     def info(text):
-        chimera.statusline.show_message(text, color='black', blankAfter=3)
+        chimera.statusline.show_message(text, color='black', blankAfter=5)
         print text
 
     @staticmethod
     def error(text):
-        chimera.statusline.show_message(text, color='red', blankAfter=3)
+        chimera.statusline.show_message(text, color='red', blankAfter=5)
         print text
 
     @staticmethod
     def suppressKsdssp(trigName, myData, molecules):
         for m in molecules.created:
             m.structureAssigned = True
+
+info = GaudiViewDialog.info
+error = GaudiViewDialog.error
