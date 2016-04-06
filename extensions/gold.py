@@ -95,7 +95,7 @@ class GoldModel(GaudiViewBaseModel):
         with open(self.path) as f:
             for line in f:
                 if line.startswith('ligand_data_file'):
-                    ligand, ext = ' '.join(line.split()[1:-1])
+                    ligand, ext = os.path.splitext(' '.join(line.split()[1:-1]))
                     ligand_basepaths.append(ligand)
                 elif line.startswith('directory'):
                     basedirs.append(line.split('=')[-1].strip())
