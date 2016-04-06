@@ -95,7 +95,8 @@ class GoldModel(GaudiViewBaseModel):
         with open(self.path) as f:
             for line in f:
                 if line.startswith('ligand_data_file'):
-                    ligand_basepaths.append(' '.join(line.split()[1:-1]).rstrip('.mol2'))
+                    ligand, ext = ' '.join(line.split()[1:-1])
+                    ligand_basepaths.append(ligand)
                 elif line.startswith('directory'):
                     basedirs.append(line.split('=')[-1].strip())
                 elif line.startswith('protein_datafile'):
