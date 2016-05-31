@@ -103,8 +103,13 @@ class GoldModel(GaudiViewBaseModel):
                     proteinpath = line.split('=')[-1].strip()
                     proteinpath = os.path.join(self.basedir, proteinpath)
                 elif line.startswith('rotamer_lib'):
-                    respos = next(f).split()[-1]
-                    rotamers[int(respos[3:])] = None
+                    residue = next(f).split()[-1]
+                    resname, respos = residue[:3], residue[3:]
+                    try:
+                        respos = int(respos)
+                    except ValueError:
+                        respos = None
+                    rotamers[(resname, respos)] = None
 
         parsed = OrderedDict()
         parsed_filenames = set()
