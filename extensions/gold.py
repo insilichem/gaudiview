@@ -57,12 +57,14 @@ class GoldModel(GaudiViewBaseModel):
         self.parse()
         self.protein = None
         if self.proteinpath:
-            self.protein = chimera.openModels.open(
-                self.proteinpath, shareXform=True, temporary=True)[0]
+            self.protein = chimera.openModels.open(self.proteinpath, shareXform=True, temporary=True)[0]
             for pos in self.rotamers:
-                residue = next(r for r in self.protein.residues if r.id.position == pos)
-                self.rotamers[pos] = [(a.serialNumber, a.coord().data())
-                                      for a in residue.atoms]
+                try:
+                    residue = next(r for r in self.protein.residues if r.id.position == pos)
+                except StopIteration:
+                    continue
+                else:
+                    self.rotamers[pos] = [(a.serialNumber, a.coord().data()) for a in residue.atoms]
 
     def parse(self):
         """
@@ -108,8 +110,8 @@ class GoldModel(GaudiViewBaseModel):
                     try:
                         respos = int(respos)
                     except ValueError:
-                        respos = None
-                    rotamers[(resname, respos)] = None
+                        continue
+                    rotamers[respos] = None
 
         parsed = OrderedDict()
         parsed_filenames = set()
