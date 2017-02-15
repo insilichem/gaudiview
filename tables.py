@@ -53,6 +53,7 @@ class Table(TableCanvas):
         self.bind("<Shift-Button-1>", self.handle_left_shift_click)
         self.bind("<Up>", self.handle_arrow_keys)
         self.bind("<Down>", self.handle_arrow_keys)
+        self.bind("<Control-c>", self.handle_ctrl_c)
         # self.focus_set()
 
     def handle_left_click(self, event):
@@ -109,6 +110,13 @@ class Table(TableCanvas):
         row = self.get_row_clicked(event)
         self.gaudiparent.triggers.activateTrigger(
             self.gaudiparent.DBL_CLICK, row)
+
+    def handle_ctrl_c(self, event):
+        clipboard = []
+        for key in self.gaudiparent.controller.selected:
+            clipboard.append('\t'.join(self.model.data[key].values()))
+        self.gaudiparent._toplevel.master.clipboard_clear()
+        self.gaudiparent._toplevel.master.clipboard_append('\n'.join(clipboard))
 
     def createTableFrame(self, callback=None):
         self.tablerowheader = RowHeader(
