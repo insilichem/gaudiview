@@ -294,7 +294,7 @@ class GoldController(GaudiViewBaseController):
             self.gui.table.tablecolheader.reversedcols['Cluster'] = 0
 
         data = self.gui.table.model.data.items()
-        data.sort(key=lambda item: item[1][column], reverse=reverse)
+        data.sort(key=lambda item: item[1][column], reverse=not reverse)
         solutions = []
         for key, row in data:
             mol, = self.display(key)
@@ -307,7 +307,7 @@ class GoldController(GaudiViewBaseController):
             seed_key, seed_mol = solutions.pop()
             for cluster in clusters:
                 cluster_key, cluster_mol = cluster[0]
-                rmsd = Midas.rmsd(cluster_mol.atoms, seed_mol.atoms)
+                rmsd = Midas.rmsd(cluster_mol.atoms, seed_mol.atoms, log=False)
                 if rmsd < cutoff:
                     seed_mol._cluster_rmsd = rmsd
                     cluster.append((seed_key, seed_mol))
@@ -316,18 +316,18 @@ class GoldController(GaudiViewBaseController):
                 seed_mol._cluster_rmsd = None
                 clusters.append([(seed_key, seed_mol)])
 
-        print('#\tMembers\tAvg RMSD (A)')
+        print('#\tSize\tRMSD\t{}'.format(column))
         for index, cluster in enumerate(clusters):
             rmsds = []
+            column_values = []
             for key, molecule in cluster:
                 self.gui.table.model.data[key]['Cluster'] = index + 1
+                column_values.append(float(self.gui.table.model.data[key][column]))
                 if molecule._cluster_rmsd is not None:
                     rmsds.append(molecule._cluster_rmsd)
-            if rmsds:
-                avg_rmsd = sum(rmsds)/len(rmsds)
-            else:
-                avg_rmsd = 'N/A'
-            print("{}\t{}\t{}".format(index+1, len(cluster), avg_rmsd))
+            avg_rmsd = round(sum(rmsds)/len(rmsds), 3) if rmsds else 0.0
+            avg_column_values = round(sum(column_values)/len(column_values), 3)
+            print('\t'.join(map(str, (index+1, len(cluster), avg_rmsd, avg_column_values))))
         
         self.gui.table.redrawTable()
 
