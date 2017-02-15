@@ -221,6 +221,53 @@ class GaudiViewBaseController(object):
     def get_table_dict(self):
         pass
 
+    def cluster(self):
+        cutoff = float(self.gui.cluster_cutoff.get())
+        column = self.gui.cluster_key.get()
+        reverse = bool(self.gui.table.tablecolheader.reversedcols[column])
+
+        if 'Cluster' not in self.gui.table.model.columnlabels:
+            self.gui.table.addColumn('Cluster')
+            self.gui.table.tablecolheader.reversedcols['Cluster'] = 0
+
+        data = self.gui.table.model.data.items()
+        data.sort(key=lambda item: item[1][column], reverse=not reverse)
+        solutions = []
+        for key, row in data:
+            mols = self.display(key)
+            solutions.append((key, mols))
+
+        seed = solutions.pop() + (None,)
+        clusters = [[seed]]
+        while solutions:
+            seed_key, seed_mols = solutions.pop()
+            seed_atoms = [a for m in seed_mols for a in m.atoms]
+            for cluster in clusters:
+                cluster_key, cluster_mols, _ = cluster[0]
+                cluster_atoms = [a for m in cluster_mols for a in m.atoms]
+                rmsd = Midas.rmsd(cluster_atoms, seed_atoms, log=False)
+                if rmsd < cutoff:
+                    cluster.append((seed_key, seed_mols, rmsd))
+                    break
+            else:
+                clusters.append([(seed_key, seed_mols, None)])
+
+        print('#\tSize\tRMSD\t{}'.format(column))
+        for index, cluster in enumerate(clusters):
+            rmsds = []
+            column_values = []
+            for key, molecule, rmsd in cluster:
+                self.gui.table.model.data[key]['Cluster'] = index + 1
+                column_values.append(float(self.gui.table.model.data[key][column]))
+                if rmsd is not None:
+                    rmsds.append(rmsd)
+            avg_rmsd = round(sum(rmsds)/len(rmsds), 3) if rmsds else 0.0
+            avg_column_values = round(sum(column_values)/len(column_values), 3)
+            print('\t'.join(map(str, (index+1, len(cluster), avg_rmsd, avg_column_values))))
+        
+        self.gui.table.redrawTable()
+
+
 
 class GaudiViewBaseModel(object):
 

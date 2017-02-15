@@ -17,10 +17,8 @@ import glob
 import itertools
 import os
 import Tkinter
-import Pmw
 # Chimera
 import chimera
-import Midas
 # Internal dependencies
 from gaudiview.extensions.base import GaudiViewBaseModel, GaudiViewBaseController
 from gaudiview.extensions import dsx
@@ -245,27 +243,6 @@ class GoldController(GaudiViewBaseController):
                                                  command=self.process)
         self.gui.dsx_check.grid(row=2, column=0, sticky='e')
 
-        # Clustering
-        self.gui.cluster_frame = Tkinter.Frame(self.gui.cliframe)
-        self.gui.cluster_key = Tkinter.StringVar()
-        fields = self.gui.table.model.columnNames[1:]
-        self.gui.cluster_keymenu = Pmw.OptionMenu(
-            self.gui.cluster_frame, items=fields, menubutton_width=10,
-            menubutton_textvariable=self.gui.cluster_key, initialitem=fields[0])
-        self.gui.cluster_cutoff = Tkinter.StringVar()
-        self.gui.cluster_cutoff.set('0.5')
-        self.gui.cluster_field = Tkinter.Entry(self.gui.cluster_frame, width=4,
-                                               textvariable=self.gui.cluster_cutoff)
-        self.gui.cluster_btn = Tkinter.Button(self.gui.cluster_frame, text='Cluster!',
-                                              command=self._cluster)
-
-        Tkinter.Label(self.gui.cluster_frame, text='Cluster by').pack(side='left')
-        self.gui.cluster_keymenu.pack(side='left')
-        Tkinter.Label(self.gui.cluster_frame, text='with RMSD cutoff').pack(side='left')
-        self.gui.cluster_field.pack(side='left')
-        self.gui.cluster_btn.pack(side='left')
-        self.gui.cluster_frame.grid(row=3, column=0, sticky='we')
-
         self.gui.cliframe.pack(fill='x')
 
     def _get_dsx_score(self, keys=None):
@@ -283,54 +260,6 @@ class GoldController(GaudiViewBaseController):
                 score = dsx_score.do(self.model.proteinpath, mol.openedAs[0])
                 d['DSX_score'] = score
                 self.gui.table.redrawTable()
-
-    def _cluster(self):
-        cutoff = float(self.gui.cluster_cutoff.get())
-        column = self.gui.cluster_key.get()
-        reverse = bool(self.gui.table.tablecolheader.reversedcols[column])
-
-        if 'Cluster' not in self.gui.table.model.columnlabels:
-            self.gui.table.addColumn('Cluster')
-            self.gui.table.tablecolheader.reversedcols['Cluster'] = 0
-
-        data = self.gui.table.model.data.items()
-        data.sort(key=lambda item: item[1][column], reverse=not reverse)
-        solutions = []
-        for key, row in data:
-            mol, = self.display(key)
-            solutions.append((key,mol))
-
-        seed = solutions.pop()
-        seed[1]._cluster_rmsd = None
-        clusters = [[seed]]
-        while solutions:
-            seed_key, seed_mol = solutions.pop()
-            for cluster in clusters:
-                cluster_key, cluster_mol = cluster[0]
-                rmsd = Midas.rmsd(cluster_mol.atoms, seed_mol.atoms, log=False)
-                if rmsd < cutoff:
-                    seed_mol._cluster_rmsd = rmsd
-                    cluster.append((seed_key, seed_mol))
-                    break
-            else:
-                seed_mol._cluster_rmsd = None
-                clusters.append([(seed_key, seed_mol)])
-
-        print('#\tSize\tRMSD\t{}'.format(column))
-        for index, cluster in enumerate(clusters):
-            rmsds = []
-            column_values = []
-            for key, molecule in cluster:
-                self.gui.table.model.data[key]['Cluster'] = index + 1
-                column_values.append(float(self.gui.table.model.data[key][column]))
-                if molecule._cluster_rmsd is not None:
-                    rmsds.append(molecule._cluster_rmsd)
-            avg_rmsd = round(sum(rmsds)/len(rmsds), 3) if rmsds else 0.0
-            avg_column_values = round(sum(column_values)/len(column_values), 3)
-            print('\t'.join(map(str, (index+1, len(cluster), avg_rmsd, avg_column_values))))
-        
-        self.gui.table.redrawTable()
-
 
     @staticmethod
     def update_rotamers(protein, xyz, atomnum):

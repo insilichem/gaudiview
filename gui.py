@@ -12,6 +12,7 @@
 
 # Python
 import Tkinter
+import Pmw
 # Chimera
 import chimera
 from chimera.baseDialog import ModelessDialog
@@ -62,7 +63,7 @@ class GaudiViewDialog(ModelessDialog):
         self.triggers.addHandler(
             self.DBL_CLICK, self.controller.double_click, None)
         # Disable ksdssp
-        chimera.triggers.addHandler("Model", self.suppressKsdssp, None)
+        # chimera.triggers.addHandler("Model", self.suppressKsdssp, None)
 
         # Fire up
         ModelessDialog.__init__(self)
@@ -124,6 +125,27 @@ class GaudiViewDialog(ModelessDialog):
                 self.cliframe, text="Select in Chimera", variable=self.selectionbool,
                 command=self.controller.select_in_chimera)
             self.selectioncheck.grid(row=2, column=0, sticky='w')
+
+        # Clustering
+        self.cluster_frame = Tkinter.Frame(self.cliframe)
+        self.cluster_key = Tkinter.StringVar()
+        fields = self.table.model.columnNames[1:]
+        self.cluster_keymenu = Pmw.OptionMenu(
+            self.cluster_frame, items=fields, menubutton_width=10,
+            menubutton_textvariable=self.cluster_key, initialitem=fields[0])
+        self.cluster_cutoff = Tkinter.StringVar()
+        self.cluster_cutoff.set('0.5')
+        self.cluster_field = Tkinter.Entry(self.cluster_frame, width=4,
+                                               textvariable=self.cluster_cutoff)
+        self.cluster_btn = Tkinter.Button(self.cluster_frame, text='Cluster!',
+                                              command=self.controller.cluster)
+
+        Tkinter.Label(self.cluster_frame, text='Cluster by').pack(side='left')
+        self.cluster_keymenu.pack(side='left')
+        Tkinter.Label(self.cluster_frame, text='with RMSD cutoff').pack(side='left')
+        self.cluster_field.pack(side='left')
+        self.cluster_btn.pack(side='left')
+        self.cluster_frame.grid(row=3, column=0, sticky='we')
 
         self.cliframe.pack(fill='x')
 
