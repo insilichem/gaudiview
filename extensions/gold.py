@@ -200,11 +200,12 @@ class GoldController(GaudiViewBaseController):
         if not keys:
             keys = self.model.data
         self.display(*keys)
-
-        if self.model.rotamers:
-            for key in keys:
-                ligand = self.molecules[key]
-                mol2data = ligand[0].mol2data
+        start, rotamers_block_size = 0, 0
+        modified_residues = set()
+        for key in keys:
+            ligand = self.molecules[key]
+            mol2data = ligand[0].mol2data
+            if self.model.rotamers:
                 try:
                     start = mol2data.index('> <Gold.Protein.RotatedAtoms>')
                 except ValueError:
@@ -213,23 +214,50 @@ class GoldController(GaudiViewBaseController):
                         self.update_rotamers(self.model.protein, coords, atomnum)
                 else:
                     rotamers = mol2data[start + 1:]
-                    modified_residues = set()
-                    for line in rotamers:
+                    for i, line in enumerate(rotamers):
                         if line.startswith('> '):
+                            rotamers_block_size = i
                             break
                         fields = line.strip().split()
                         atom = self.update_rotamers(
                             self.model.protein, fields[0:3], fields[18])
                         if atom:
                             modified_residues.add(atom.residue)
-                    # hide already displayed residues
-                    for res in self.model.protein.residues:
-                        for a in res.atoms:
-                            a.display = 0
-                    # display modified residues
-                    for res in modified_residues:
-                        for a in res.atoms:
-                            a.display = 1
+            # Continue
+            in_hbonds = False
+            for line in mol2data[start+rotamers_block_size:]:
+                print(line)
+                line = line.strip()
+                if line.endswith('.Hbonds>'):
+                    in_hbonds = True
+                elif line.startswith('> '):
+                    in_hbonds = False
+                elif in_hbonds and line and not line.startswith('donor'):
+                    fields = line.split()
+                    donor_mol = self.model.protein if fields[0].startswith('P') else ligand[0]
+                    donor_serial = int(fields[3])
+                    acceptor_mol = self.model.protein if fields[4].startswith('P') else ligand[0]
+                    acceptor_serial = int(fields[5])
+                    value = float(fields[6])
+                    pb = self.draw_hbond(donor_mol, donor_serial, 
+                                         acceptor_mol, acceptor_serial, value,
+                                         distance=True)
+                    if pb:
+                        for a in pb.atoms:
+                            modified_residues.add(a.residue)
+
+                    
+        # hide already displayed residues
+        for res in self.model.protein.residues:
+            res.label = ''
+            for a in res.atoms:
+                a.display = 0
+        # display modified residues
+        for res in modified_residues:
+            if res.molecule is self.model.protein:
+                res.label = '{}{}'.format(res.type, res.id.position)
+            for a in res.atoms:
+                a.display = 1
 
         # self._get_dsx_score(keys=keys)
 
@@ -276,6 +304,23 @@ class GoldController(GaudiViewBaseController):
             atom.setCoord(chimera.Point(*map(float, xyz)))
             return atom
 
+    @staticmethod
+    def draw_hbond(donor_mol, donor_serial, acceptor_mol, acceptor_serial,
+                   label=None, distance=True):
+        try:
+            donor = next(a for a in donor_mol.atoms 
+                         if a.serialNumber == donor_serial)
+            acceptor = next(a for a in acceptor_mol.atoms 
+                            if a.serialNumber == acceptor_serial)
+        except StopIteration:
+            return
+        else:
+            if distance and label:
+                distance = donor.xformCoord().distance(acceptor.xformCoord())
+                distance = round(distance, 3)
+                label = '{}, {}'.format(label, distance)
+            return pseudobond(donor, acceptor, 'HBonds', (0, 0.5, 1.0, 1.0), label)
+
 
 def common_path(directories):
     norm_paths = [os.path.abspath(p) + os.path.sep for p in directories]
@@ -284,3 +329,12 @@ def common_path(directories):
 
 def common_path_of_filenames(filenames):
     return common_path([os.path.dirname(f) for f in filenames])
+
+def pseudobond(atom1, atom2, group, color=None, label=None):
+    pbg = chimera.misc.getPseudoBondGroup(group)
+    pb = pbg.newPseudoBond(atom1, atom2)
+    if color is not None:
+        pb.color = chimera.MaterialColor(*color)
+    if label is not None:
+        pb.label = str(label)
+    return pb
