@@ -226,9 +226,10 @@ class GoldController(GaudiViewBaseController):
             # Continue
             in_hbonds = False
             for line in mol2data[start+rotamers_block_size:]:
-                print(line)
                 line = line.strip()
                 if line.endswith('.Hbonds>'):
+                    print("HBonds in {}:".format(key))
+                    print(" Donor -- Acceptor: score, distance")
                     in_hbonds = True
                 elif line.startswith('> '):
                     in_hbonds = False
@@ -243,6 +244,7 @@ class GoldController(GaudiViewBaseController):
                                          acceptor_mol, acceptor_serial, value,
                                          distance=True)
                     if pb:
+                        print(pb.atoms[0], '--', pb.atoms[1], ':', pb.label)
                         for a in pb.atoms:
                             modified_residues.add(a.residue)
 
