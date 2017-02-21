@@ -22,6 +22,13 @@ import importlib
 import chimera
 import Midas
 import os
+from functools import partial
+try:
+    from subalign import align_best
+    calculate_rmsd = partial(align_best, transform=False, sanitize=True, 
+                             ignore_warnings=True, static=True)
+except ImportError:
+    calculate_rmsd = lambda ref, probe: (Midas.rmsd(ref.atoms, probe.atoms, log=False), None, None)
 
 FORMATS = {
     'GAUDI results': 'gaudiview.extensions.gaudi',
@@ -232,25 +239,36 @@ class GaudiViewBaseController(object):
 
         data = self.gui.table.model.data.items()
         data.sort(key=lambda item: item[1][column], reverse=not reverse)
+
+        if self.HAS_SELECTION:
+            marked = [self.gui.selection_listbox.get(i)
+                      for i in self.gui.selection_listbox.curselection()]
+        else:
+            marked = None
         solutions = []
         for key, row in data:
-            mols = self.display(key)
-            solutions.append((key, mols))
+            if marked is not None:
+                mols = [m for m in self.display(key) if m.openedAs[0] in marked]
+            else:
+                mols = self.display(key)
+            if len(mols) == 1:
+                solutions.append((key, mols[0]))
+            else:
+                raise chimera.UserError('Only one molecule must be selected '
+                                        'for clustering')
 
         seed = solutions.pop() + (None,)
         clusters = [[seed]]
         while solutions:
-            seed_key, seed_mols = solutions.pop()
-            seed_atoms = [a for m in seed_mols for a in m.atoms]
+            seed_key, seed_mol = solutions.pop()
             for cluster in clusters:
-                cluster_key, cluster_mols, _ = cluster[0]
-                cluster_atoms = [a for m in cluster_mols for a in m.atoms]
-                rmsd = Midas.rmsd(cluster_atoms, seed_atoms, log=False)
+                cluster_key, cluster_mol, _ = cluster[0]
+                rmsd, _, _ = calculate_rmsd(cluster_mol, seed_mol)
                 if rmsd < cutoff:
-                    cluster.append((seed_key, seed_mols, rmsd))
+                    cluster.append((seed_key, seed_mol, rmsd))
                     break
             else:
-                clusters.append([(seed_key, seed_mols, None)])
+                clusters.append([(seed_key, seed_mol, None)])
 
         print('#\tSize\tRMSD\t{}'.format(column))
         for index, cluster in enumerate(clusters):
