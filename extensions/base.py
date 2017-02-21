@@ -24,11 +24,9 @@ import Midas
 import os
 from functools import partial
 try:
-    from subalign import align_best
-    calculate_rmsd = partial(align_best, transform=False, sanitize=True, 
-                             ignore_warnings=True, static=True)
+    from subalign import untransformed_rmsd as calculate_rmsd
 except ImportError:
-    calculate_rmsd = lambda ref, probe: (Midas.rmsd(ref.atoms, probe.atoms, log=False), None, None)
+    calculate_rmsd = lambda ref, probe: Midas.rmsd(ref.atoms, probe.atoms, log=False)
 
 FORMATS = {
     'GAUDI results': 'gaudiview.extensions.gaudi',
@@ -263,7 +261,7 @@ class GaudiViewBaseController(object):
             seed_key, seed_mol = solutions.pop()
             for cluster in clusters:
                 cluster_key, cluster_mol, _ = cluster[0]
-                rmsd, _, _ = calculate_rmsd(cluster_mol, seed_mol)
+                rmsd = calculate_rmsd(cluster_mol, seed_mol)
                 if rmsd < cutoff:
                     cluster.append((seed_key, seed_mol, rmsd))
                     break
