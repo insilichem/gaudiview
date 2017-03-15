@@ -11,6 +11,7 @@
 ##############
 
 # External dependencies
+import chimera
 from tkintertable.Tables import TableCanvas, ColumnHeader, RowHeader, AutoScrollbar
 from tkintertable.Filtering import *
 from tkintertable.TableModels import TableModel
@@ -22,7 +23,7 @@ class Table(TableCanvas):
     def set_defaults(self):
         """Set default settings"""
         self.cellwidth = 60
-        self.maxcellwidth = 500
+        self.maxcellwidth = 1000
         self.rowheight = 20
         self.horizlines = 1
         self.vertlines = 0
@@ -34,13 +35,39 @@ class Table(TableCanvas):
         self.linewidth = 1.0
         self.rowheaderwidth = 0
         self.showkeynamesinheader = False
-        self.thefont = ('Arial', 11)
+        self.thefont = ('Arial', -15)
         self.cellbackgr = '#EEEEEE'
         self.entrybackgr = 'white'
         self.grid_color = '#ABB1AD'
         self.selectedcolor = 'yellow'
         self.rowselectedcolor = '#DDDDDD'
         self.multipleselectioncolor = '#DDDDDD'
+    
+    def adjustColumnWidths(self):
+        """Optimally adjust col widths to accomodate the longest entry
+            in each column - usually only called  on first redraw"""
+        #self.cols = self.model.getColumnCount()
+        try:
+            fontsize = self.thefont[1]
+        except:
+            fontsize = self.fontsize
+        dpi = chimera.tkgui.app.winfo_fpixels('1i')/72.0
+        scale = 8.5 * float(abs(fontsize))/(12+2*dpi)
+        for col in range(self.cols):
+            colname = self.model.getColumnName(col)
+            if self.model.columnwidths.has_key(colname):
+                w = self.model.columnwidths[colname]
+            else:
+                w = self.cellwidth
+            maxlen = self.model.getlongestEntry(col)
+            size = maxlen * scale
+            if size < w:
+                continue
+            #print col, size, self.cellwidth
+            if size >= self.maxcellwidth:
+                size = self.maxcellwidth
+            self.model.columnwidths[colname] = size + float(fontsize)/12*6
+        return
 
     def do_bindings(self):
         self.bind("<Button-1>", self.handle_left_click)
@@ -121,7 +148,7 @@ class Table(TableCanvas):
     def createTableFrame(self, callback=None):
         self.tablerowheader = RowHeader(
             self.parentframe, self, width=self.rowheaderwidth)
-        self.tablecolheader = Headers(self.parentframe, self)
+        self.tablecolheader = Headers(self.parentframe, self, height=self.rowheight)
         self.Yscrollbar = AutoScrollbar(
             self.parentframe, orient=VERTICAL, command=self.set_yviews)
         self.Yscrollbar.grid(
@@ -236,12 +263,12 @@ class Table(TableCanvas):
 
 class Headers(ColumnHeader):
 
-    def __init__(self, parent=None, table=None):
-        Canvas.__init__(self, parent, bg='gray25', width=500, height=20)
-        self.thefont = 'Arial 14'
+    def __init__(self, parent=None, table=None, width=500, height=20):
+        Canvas.__init__(self, parent, bg='gray25', width=width, height=height)
+        self.thefont = ('Arial', -15)
         if table is not None:
             self.table = table
-            self.height = 20
+            self.height = height
             self.model = self.table.getModel()
             self.config(width=self.table.width)
             self.columnlabels = self.model.columnlabels

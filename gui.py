@@ -81,8 +81,10 @@ class GaudiViewDialog(ModelessDialog):
         # Fill data in and create table
         self.model = tables.TableModel()
         self.model.importDict(self.controller.get_table_dict())
+        fontsize = int(round(-11 * chimera.tkgui.app.winfo_fpixels('1i') / 72.0, 0))
         self.table = tables.Table(self.tframe, self.model, editable=False,
-                                  gaudiparent=self)
+                                  gaudiparent=self, thefont=('Arial', fontsize),
+                                  rowheight=abs(fontsize)+8)
         self.table.createTableFrame()
         self.table.createFilteringBar(parent)
         self.table.adjustColumnWidths()
