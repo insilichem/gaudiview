@@ -2,12 +2,12 @@
 
 ##############
 # GAUDIView: Light interface to explore
-# solutions from GAUDIasm and more
+# solutions from GaudiMM and more
 # Authors:  Jaime Rodriguez-Guerra Pedregal
 #            <jaime.rodriguezguerra@uab.cat>
 #           Jean-Didier Marechal
 #            <jeandidier.marechal@uab.cat>
-# Web: https://bitbucket.org/jrgp/gaudiview
+# Web: https://github.com/insilichem/gaudiview
 ##############
 
 """
@@ -244,17 +244,18 @@ class GaudiViewBaseController(object):
         else:
             marked = None
         solutions = []
+        # for key, row in data:
+        #     if marked is not None:
+        #         mols = [m for m in self.display(key) if m.openedAs[0] in marked]
+        #     else:
+        #         mols = self.display(key)
+        #     if len(mols) == 1:
+        #         solutions.append((key, mols[0]))
+        #     else:
+        #         raise chimera.UserError('Only one molecule must be selected '
+        #                                 'for clustering')
         for key, row in data:
-            if marked is not None:
-                mols = [m for m in self.display(key) if m.openedAs[0] in marked]
-            else:
-                mols = self.display(key)
-            if len(mols) == 1:
-                solutions.append((key, mols[0]))
-            else:
-                raise chimera.UserError('Only one molecule must be selected '
-                                        'for clustering')
-
+            solutions.append((key, self.display(key)[0]))
         seed = solutions.pop() + (None,)
         clusters = [[seed]]
         while solutions:

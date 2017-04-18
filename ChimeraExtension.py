@@ -2,19 +2,19 @@
 
 ##############
 # GAUDIView: Light interface to explore
-# solutions from GAUDIasm and more
+# solutions from GaudiMM and more
 # Authors:  Jaime Rodriguez-Guerra Pedregal
 #            <jaime.rodriguezguerra@uab.cat>
 #           Jean-Didier Marechal
 #            <jeandidier.marechal@uab.cat>
-# Web: https://bitbucket.org/jrgp/gaudiview
+# Web: https://github.com/insilichem/gaudiview
 ##############
 
 import chimera
 from OpenSave import OpenModeless
 
 FILTERS = [
-    ("GAUDI results", ["*.gaudi-output"]),
+    ("GaudiMM results", ["*.gaudi-output"]),
     ("GOLD results", ["*.conf"])
 ]
 
@@ -25,7 +25,7 @@ class GaudiViewEMO(chimera.extension.EMO):
         return "GAUDIView"
 
     def description(self):
-        return "Light interface to explore solutions from GAUDIasm and more"
+        return "Light interface to explore solutions from GaudiMM and GOLD"
 
     def categories(self):
         return ['InsiliChem']

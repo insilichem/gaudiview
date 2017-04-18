@@ -2,17 +2,17 @@
 
 ##############
 # GAUDIView: Light interface to explore
-# solutions from GAUDIasm and more
+# solutions from GaudiMM and more
 # Authors:  Jaime Rodriguez-Guerra Pedregal
 #            <jaime.rodriguezguerra@uab.cat>
 #           Jean-Didier Marechal
 #            <jeandidier.marechal@uab.cat>
-# Web: https://bitbucket.org/jrgp/gaudiview
+# Web: https://github.com/insilichem/gaudiview
 ##############
 
 """
 GaudiView is a lightweight interface to explore
-solutions from molecular design programs, such as GAUDI,
+solutions from molecular design programs, such as GaudiMM,
 GOLD docking, and so on.
 
 It is built with extensibility in mind following a MVC

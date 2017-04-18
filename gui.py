@@ -2,12 +2,12 @@
 
 ##############
 # GAUDIView: Light interface to explore
-# solutions from GAUDIasm and more
+# solutions from GaudiMM and more
 # Authors:  Jaime Rodriguez-Guerra Pedregal
 #            <jaime.rodriguezguerra@uab.cat>
 #           Jean-Didier Marechal
 #            <jeandidier.marechal@uab.cat>
-# Web: https://bitbucket.org/jrgp/gaudiview
+# Web: https://github.com/insilichem/gaudiview
 ##############
 
 # Python
@@ -44,7 +44,7 @@ class GaudiViewDialog(ModelessDialog):
 
     buttons = ("OK", "Close")
     default = None
-    help = "https://bitbucket.org/jrgp/gaudiview"
+    help = "https://github.com/insilichem/gaudiview"
     SELECTION_CHANGED = "GaudiViewSelectionChanged"
     DBL_CLICK = "GaudiViewDoubleClick"
     EXIT = "GaudiViewExited"
