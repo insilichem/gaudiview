@@ -11,6 +11,7 @@
 ##############
 
 # Python
+from __future__ import print_function
 from collections import OrderedDict
 import zipfile
 import tempfile
@@ -82,7 +83,7 @@ class GaudiModel(GaudiViewBaseModel):
         try:
             z = zipfile.ZipFile(path)
         except zipfile.BadZipfile:
-            print "Not a valid GAUDI result"
+            print("{} is not a valid GAUDI result".format(path))
         else:
             self.index += 1
             tmp = os.path.join(
@@ -106,9 +107,8 @@ class GaudiModel(GaudiViewBaseModel):
                     subid += 1
                 elif name.endswith(".yaml"):
                     meta.append(yaml.load(absname))
-            return mol2, meta
-        finally:
             z.close()
+            return mol2, meta
 
     def details(self, key=None):
         if key:
@@ -120,6 +120,29 @@ class GaudiModel(GaudiViewBaseModel):
                 data = ''
 
         return data
+
+    def _extract_file_from_zip_if_contains(self, path, query):
+        try:
+            z = zipfile.ZipFile(path)
+        except zipfile.BadZipfile:
+            print("{} is not a valid GAUDI result".format(path))
+        else:
+            tmp = os.path.join(self.tempdir, 
+                               os.path.splitext(os.path.basename(path))[0])
+            try:
+                os.mkdir(tmp)
+            except OSError:  # Assume it exists
+                pass
+            
+            try:
+                match = next(name for name in z.namelist() if query in name)
+            except StopIteration:
+                raise ValueError('{} does not contain any '
+                                 'file with {} in its filename'.format(path, query))
+            else:
+                return z.extract(match, path=tmp)
+            finally:
+                z.close()
 
 
 class GaudiController(GaudiViewBaseController):
@@ -200,8 +223,8 @@ class GaudiController(GaudiViewBaseController):
                            [round(n, 4) for n in r.chis] ==
                            [round(float(n), 4) for n in chis])
         except StopIteration:
-            print "No rotamer found for {}{} with chi angles {}".format(
-                pos, restype, ','.join(chis))
+            print("No rotamer found for {}{} "
+                  "with chi angles {}".format(pos, restype, ','.join(chis)))
         else:
             Rotamers.useRotamer(res, [rotamer])
             for a in res.atoms:

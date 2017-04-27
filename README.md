@@ -21,7 +21,6 @@ There's a short tutorial written in the [GaudiMM docs](http://gaudi.readthedocs.
 
 * **[tkintertable](https://pypi.python.org/pypi/tkintertable) package**. Sortable and filterable table.
 
-
 ## Installation
 
 1 - If you don't have Chimera installed, download the [latest stable copy](http://www.cgl.ucsf.edu/chimera/download.html) and install it with:
@@ -34,22 +33,25 @@ There's a short tutorial written in the [GaudiMM docs](http://gaudi.readthedocs.
 
 3 - Open a new Chimera instance and click on `Favorites> Add to Favorites/Toolbar`. In this dialog, add the path of the directory you created in step 2 and click save.
 
-4 - Download the [latest version](https://github.com/insilichem/gaudiview/archive/master.zip) of **GaudiView** (or `git clone` the repository), and place it inside that directory.
+4 - Download the [latest version](https://github.com/insilichem/gaudiview/archive/master.zip) of **GaudiView** and place it inside that directory.
 
     cd ~/insilichem
     wget https://github.com/insilichem/gaudiview/archive/master.zip
     unzip master.zip
     mv gaudiview-master gaudiview
-    # or git clone https://github.com/insilichem/gaudiview.git
 
-5 - Install the dependencies with any Python 2 `pip` :
+You can also use `git clone` inside `~/insilichem`:
+
+    git clone https://github.com/insilichem/gaudiview.git
+
+5 - Install the dependencies in-place with any Python 2 `pip`:
 
     pip install -t . tkintertable pyyaml
 
 
 ### Alternative A
 
-If `pip` is not available in your system, you can install it with through Chimera's own Python:
+If `pip` is not available in your system, you can install it with Chimera's own Python:
 
     wget https://bootstrap.pypa.io/get-pip.py
     chimera --nogui --script get-pip.py # run it twice if it segfaults
