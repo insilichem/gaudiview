@@ -325,15 +325,16 @@ class Headers(ColumnHeader):
             self.model.moveColumn(self.table.currentcol, self.draggedcol)
             self.table.redrawTable()
         elif not self.draggedcol:  # sort!
-            former_selected_row = self.table.get_currentRecordName()
+            try:
+                former_selected_row = self.table.get_currentRecordName()
+            except IndexError:
+                former_selected_row = -1
             sortkey = self.model.getColumnName(self.table.currentcol)
             self.reversedcols[sortkey] = not self.reversedcols[sortkey]
-            self.columnlabels[
-                sortkey] = sortkey + (u' \u25B2', u' \u25BC')[int(self.reversedcols[sortkey])]
-            self.table.sortTable(
-                self.table.currentcol, reverse=self.reversedcols[sortkey])
-            self.table.currentrow = self.table.model.getRecordIndex(
-                former_selected_row)
+            self.columnlabels[sortkey] = '{} {}'.format((u'\u25B2', u'\u25BC')[int(self.reversedcols[sortkey])],
+                                                        sortkey)
+            self.table.sortTable(self.table.currentcol, reverse=self.reversedcols[sortkey])
+            self.table.currentrow = self.table.model.getRecordIndex(former_selected_row)
             self.table.drawSelectedRow()
             self.table.redrawTable()
 
