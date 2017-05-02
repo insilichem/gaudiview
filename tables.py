@@ -141,7 +141,7 @@ class Table(TableCanvas):
     def handle_ctrl_c(self, event):
         clipboard = []
         for key in self.gaudiparent.controller.selected:
-            clipboard.append('\t'.join(self.model.data[key].values()))
+            clipboard.append('\t'.join(map(str, self.model.data[key].values())))
         self.gaudiparent._toplevel.master.clipboard_clear()
         self.gaudiparent._toplevel.master.clipboard_append('\n'.join(clipboard))
 
