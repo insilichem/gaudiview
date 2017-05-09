@@ -43,14 +43,14 @@ class GaudiViewEMO(chimera.extension.EMO):
         self.module('gui').GaudiViewDialog(path, filetype)
 
     def gaudiview_open_gaudi(self, path):
-        self.module('gui').GaudiViewDialog(path, "GAUDI results")
+        self.module('gui').GaudiViewDialog(path, "GaudiMM results")
 
     def gaudiview_open_gold(self, path):
         self.module('gui').GaudiViewDialog(path, "GOLD results")
 
 emo = GaudiViewEMO(__file__)
 chimera.extension.manager.registerExtension(emo)
-chimera.fileInfo.register("GAUDI output", emo.gaudiview_open_gaudi, ['.gaudi-output'],
-                          ['GAUDI output'], category=chimera.FileInfo.STRUCTURE)
+chimera.fileInfo.register("GaudiMM output", emo.gaudiview_open_gaudi, ['.gaudi-output'],
+                          ['GaudiMM output'], category=chimera.FileInfo.STRUCTURE)
 chimera.fileInfo.register("GOLD output", emo.gaudiview_open_gold, ['.conf'],
                           ['GOLD output'], category=chimera.FileInfo.STRUCTURE)
