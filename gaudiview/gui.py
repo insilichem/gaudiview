@@ -198,6 +198,7 @@ class GaudiViewDialog(ModelessDialog):
         Close everything amd exit
         """
         self.controller.close_all()
+        chimera.extension.manager.deregisterInstance(self)
         self.destroy()
 
     def on_resize(self, event):
