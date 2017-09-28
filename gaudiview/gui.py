@@ -20,16 +20,9 @@ from chimera.baseDialog import ModelessDialog
 from . import tables
 from .extensions.base import load_controller
 
-ui = None
-
 
 def showUI(callback=None):
-    """
-    Requested by Chimera way-of-doing-things
-    """
-    global ui
-    if not ui:
-        ui = GaudiViewDialog()
+    ui = GaudiViewDialog()
     ui.enter()
     if callback:
         ui.addCallback(callback)
