@@ -15,20 +15,13 @@ import Tkinter
 import Pmw
 # Chimera
 import chimera
-from chimera.baseDialog import ModelessDialog
 # Internal dependencies
+from libplume.ui import PlumeBaseDialog
 from . import tables
 from .extensions.base import load_controller
 
 
-def showUI(callback=None):
-    ui = GaudiViewDialog()
-    ui.enter()
-    if callback:
-        ui.addCallback(callback)
-
-
-class GaudiViewDialog(ModelessDialog):
+class GaudiViewDialog(PlumeBaseDialog):
 
     """
     Displays main GUI and initializes models and controllers
@@ -38,11 +31,14 @@ class GaudiViewDialog(ModelessDialog):
     buttons = ("OK", "Close")
     default = None
     help = "https://github.com/insilichem/gaudiview"
+    VERSION = '0.0.1'
+    VERSION_URL = "https://api.github.com/repos/insilichem/gaudiview/releases/latest"
     SELECTION_CHANGED = "GaudiViewSelectionChanged"
     DBL_CLICK = "GaudiViewDoubleClick"
     EXIT = "GaudiViewExited"
+    
 
-    def __init__(self, path, format, *args, **kwarg):
+    def __init__(self, path, format, *args, **kwargs):
         # GUI init
         self.title = 'GaudiView'
         self.controller = load_controller(path=path, format=format, gui=self)
@@ -59,13 +55,12 @@ class GaudiViewDialog(ModelessDialog):
         # chimera.triggers.addHandler("Model", self.suppressKsdssp, None)
 
         # Fire up
-        ModelessDialog.__init__(self)
-        chimera.extension.manager.registerInstance(self)
+        super(GaudiViewDialog, self).__init__(*args, **kwargs)
 
         # Handle resizing
         self.uiMaster().bind("<Configure>", self.on_resize)
 
-    def fillInUI(self, parent):
+    def fill_in_ui(self, parent):
         # Create main window
         self.tframe = Tkinter.Frame(parent)
         self.tframe.pack(expand=True, fill='both')
@@ -231,6 +226,7 @@ class GaudiViewDialog(ModelessDialog):
     def suppressKsdssp(trigName, myData, molecules):
         for m in molecules.created:
             m.structureAssigned = True
+
 
 info = GaudiViewDialog.info
 error = GaudiViewDialog.error
