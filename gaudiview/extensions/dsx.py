@@ -14,9 +14,11 @@
 import os
 import subprocess
 import tempfile
+import chimera
 # Internal dependencies
 from gaudiview.extensions.base import GaudiViewBasePlugin
-from gaudiview.gui import error, info
+if not chimera.nogui:
+    from gaudiview.gui import error, info
 
 class DSXPlugin(GaudiViewBasePlugin):
 
