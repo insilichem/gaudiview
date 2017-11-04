@@ -25,7 +25,7 @@ import os
 from functools import partial
 try:
     from subalign import untransformed_rmsd as calculate_rmsd
-except ImportError:
+except (ImportError, chimera.UserError):
     calculate_rmsd = lambda ref, probe: Midas.rmsd(ref.atoms, probe.atoms, log=False)
 
 FORMATS = {
@@ -281,7 +281,7 @@ class GaudiViewBaseController(object):
             avg_rmsd = round(sum(rmsds)/len(rmsds), 3) if rmsds else 0.0
             avg_column_values = round(sum(column_values)/len(column_values), 3)
             print('\t'.join(map(str, (index+1, len(cluster), avg_rmsd, avg_column_values))))
-        
+
         self.gui.table.redrawTable()
 
 
