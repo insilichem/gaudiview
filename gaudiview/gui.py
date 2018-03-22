@@ -16,12 +16,12 @@ import Pmw
 # Chimera
 import chimera
 # Internal dependencies
-from libplume.ui import PlumeBaseDialog
+from libtangram.ui import TangramBaseDialog
 from . import tables
 from .extensions.base import load_controller
 
 
-class GaudiViewDialog(PlumeBaseDialog):
+class GaudiViewDialog(TangramBaseDialog):
 
     """
     Displays main GUI and initializes models and controllers
@@ -36,7 +36,7 @@ class GaudiViewDialog(PlumeBaseDialog):
     SELECTION_CHANGED = "GaudiViewSelectionChanged"
     DBL_CLICK = "GaudiViewDoubleClick"
     EXIT = "GaudiViewExited"
-    
+
 
     def __init__(self, path, format, *args, **kwargs):
         # GUI init

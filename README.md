@@ -46,7 +46,7 @@ You can also use `git clone` inside `~/insilichem`:
 
 5 - Install the dependencies in-place with any Python 2 `pip`:
 
-    pip install -t . tkintertable pyyaml https://github.com/insilichem/libplume/archive/master.zip
+    pip install -t . tkintertable pyyaml https://github.com/insilichem/libtangram/archive/master.zip
 
 
 ### Alternative A
@@ -55,7 +55,7 @@ If `pip` is not available in your system, you can install it with Chimera's own 
 
     wget https://bootstrap.pypa.io/get-pip.py
     chimera --nogui --script get-pip.py # run it twice if it segfaults
-    chimera --nogui --script `chimera --root`"/bin/pip install -t . tkintertable pyyaml https://github.com/insilichem/libplume/archive/master.zip"
+    chimera --nogui --script `chimera --root`"/bin/pip install -t . tkintertable pyyaml https://github.com/insilichem/libtangram/archive/master.zip"
 
 ### Alternative B
 
@@ -64,4 +64,4 @@ Download [tkintertable](https://pypi.python.org/pypi/tkintertable) source packag
     cd /path/to/where/tkintertable/was/extracted/
     runscript setup.py install
 
-Repeat with [PyYaml](https://pypi.python.org/pypi/PyYAML) source package and [libplume](https://github.com/insilichem/libplume/archive/master.zip).
+Repeat with [PyYaml](https://pypi.python.org/pypi/PyYAML) source package and [libtangram](https://github.com/insilichem/libtangram/archive/master.zip).
