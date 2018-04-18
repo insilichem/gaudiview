@@ -11,6 +11,7 @@
 ##############
 
 # Python
+from __future__ import print_function
 import Tkinter
 import Pmw
 # Chimera
@@ -118,10 +119,11 @@ class GaudiViewDialog(TangramBaseDialog):
 
         # Clustering
         self.cluster_frame = Tkinter.Frame(self.cliframe)
+        self.cluster_frame.columnconfigure(0, weight=1)
         self.cluster_key = Tkinter.StringVar()
         fields = self.table.model.columnNames[1:]
         self.cluster_keymenu = Pmw.OptionMenu(
-            self.cluster_frame, items=fields, menubutton_width=10,
+            self.cluster_frame, items=fields,
             menubutton_textvariable=self.cluster_key, initialitem=fields[0])
         self.cluster_cutoff = Tkinter.StringVar()
         self.cluster_cutoff.set('0.5')
@@ -131,7 +133,7 @@ class GaudiViewDialog(TangramBaseDialog):
                                               command=self.controller.cluster)
 
         Tkinter.Label(self.cluster_frame, text='Cluster by').pack(side='left')
-        self.cluster_keymenu.pack(side='left')
+        self.cluster_keymenu.pack(side='left', expand=True, fill='x')
         Tkinter.Label(self.cluster_frame, text='with RMSD cutoff').pack(side='left')
         self.cluster_field.pack(side='left')
         self.cluster_btn.pack(side='left')
@@ -213,14 +215,14 @@ class GaudiViewDialog(TangramBaseDialog):
         caller.focus_set()
 
     @staticmethod
-    def info(text):
-        chimera.statusline.show_message(text, color='black', blankAfter=5)
-        print text
+    def info(text, color='black', blankAfter=5):
+        chimera.statusline.show_message(text, color=color, blankAfter=blankAfter)
+        print(text)
 
     @staticmethod
-    def error(text):
-        chimera.statusline.show_message(text, color='red', blankAfter=5)
-        print text
+    def error(text, color='red', blankAfter=5):
+        chimera.statusline.show_message(text, color=color, blankAfter=blankAfter)
+        print(text)
 
     @staticmethod
     def suppressKsdssp(trigName, myData, molecules):

@@ -127,13 +127,13 @@ class GaudiModel(GaudiViewBaseModel):
         except zipfile.BadZipfile:
             print("{} is not a valid GAUDI result".format(path))
         else:
-            tmp = os.path.join(self.tempdir, 
+            tmp = os.path.join(self.tempdir,
                                os.path.splitext(os.path.basename(path))[0])
             try:
                 os.mkdir(tmp)
             except OSError:  # Assume it exists
                 pass
-            
+
             try:
                 match = next(name for name in z.namelist() if query in name)
             except StopIteration:
@@ -151,6 +151,7 @@ class GaudiController(GaudiViewBaseController):
         GaudiViewBaseController.__init__(self, *args, **kwargs)
         self.basedir = self.model.basedir
         self.HAS_MORE_GUI = True
+        self._gaudi_obj_dialog = None
 
     def display(self, *keys):
         """
@@ -194,17 +195,17 @@ class GaudiController(GaudiViewBaseController):
             clashes, distances... and every objective.
         """
         pass
-        # self._get_dsx_score(keys=[key])
 
     def get_table_dict(self):
         return self.model.table_data
 
     def extend_gui(self):
-        self.gui.dsx_bool = Tkinter.BooleanVar()
-        self.gui.dsx_check = Tkinter.Checkbutton(
-            self.gui.cliframe, text="Get DSX Score", variable=self.gui.dsx_bool,
-            command=self._get_dsx_score)
-        self.gui.dsx_check.grid(row=2, column=1, sticky='sew')
+        from gaudiview.extensions.gaudiobj import HAS_GAUDI
+        if not HAS_GAUDI:
+            return
+        self.gui.add_column_btn = Tkinter.Button(
+            self.gui.cliframe, text="Rescore",command=self._add_column)
+        self.gui.add_column_btn.grid(row=2, column=1, sticky='sew')
         self.gui.cliframe.pack(fill='x')
 
     @staticmethod
@@ -230,18 +231,35 @@ class GaudiController(GaudiViewBaseController):
             for a in res.atoms:
                 a.display = 1
 
-    def _get_dsx_score(self, keys=None):
-        if 'DSX_score' not in self.gui.table.model.columnlabels:
-            self.gui.table.addColumn('DSX_score')
-            self.gui.table.tablecolheader.reversedcols['DSX_score'] = 0
-        if keys is None:
-            data = self.gui.table.model.data.iteritems()
+    def _add_column(self):
+        from gaudiview.extensions.gaudiobj import GaudiObjectiveDialog
+        keys = self.selected or self.gui.table.model.data
+        if len(keys) > 50:
+            raise chimera.UserError('Too many solutions requested! Max 50.')
+        self._gaudi_obj_dialog = GaudiObjectiveDialog(callback=self._add_column_cb)
+        self._gaudi_obj_dialog.enter()
+
+    def _add_column_cb(self):
+        if self._gaudi_obj_dialog is None:
+            return
+        if not self._gaudi_obj_dialog._returned_OK:
+            return
+        if len(self.selected) > 1:
+            data = {k: self.gui.table.model.data[k] for k in self.selected}
         else:
-            data = [(k, self.gui.table.model.data[k]) for k in keys]
-        for k, d in data:
-            if 'DSX_score' not in d:
-                mols = sorted(self.display(k), key=lambda m: len(m.atoms))
-                dsx_score = dsx.DSXPlugin()
-                score = dsx_score.do(mols[1].openedAs[0], mols[0].openedAs[0])
-                d['DSX_score'] = score
-                self.gui.table.redrawTable()
+            data = self.gui.table.model.data
+        from gaudiview.extensions.gaudiobj import GaudiObjectivePlugin
+        objective = self._gaudi_obj_dialog.objective
+        objective_kw = self._gaudi_obj_dialog.objective_kwargs
+        objname = objective.__name__
+        if objname not in self.gui.table.model.columnlabels:
+            self.gui.table.addColumn(objname)
+            self.gui.table.tablecolheader.reversedcols[objname] = 0
+        total = len(data)
+        for i, (k, d) in enumerate(data.iteritems(), 1):
+            mols = sorted(self.display(k), key=lambda m: len(m.atoms))
+            d[objname] = GaudiObjectivePlugin().do(objective=objective,
+                proteinpath=mols[-1].openedAs[0],
+                ligandpath=mols[0].openedAs[0], obj_kwargs=objective_kw)
+            self.gui.status('Rescored {} out of {}'.format(i, total))
+        self.gui.table.redrawTable()

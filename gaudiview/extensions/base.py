@@ -29,7 +29,7 @@ except (ImportError, chimera.UserError):
     calculate_rmsd = lambda ref, probe: Midas.rmsd(ref.atoms, probe.atoms, log=False)
 
 FORMATS = {
-    'GaudiMM results': 'gaudiview.extensions.gaudi',
+    'GaudiMM results': 'gaudiview.extensions.gaudireader',
     'GOLD results': 'gaudiview.extensions.gold',
     'Mol2 files': 'gaudiview.extensions.mol2'
 }
