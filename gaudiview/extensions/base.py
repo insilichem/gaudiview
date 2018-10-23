@@ -242,8 +242,11 @@ class GaudiViewBaseController(object):
         if 'Cluster' not in self.gui.table.model.columnlabels:
             self.gui.table.addColumn('Cluster')
             self.gui.table.tablecolheader.reversedcols['Cluster'] = 0
-
-        data = self.gui.table.model.data.items()
+        data = self.gui.table.model.data
+        if len(self.selected) > 1:
+            data = [(k, data[k]) for k in self.selected]
+        else:
+            data = data.items()
         data.sort(key=lambda item: item[1][column], reverse=not reverse)
 
         if self.HAS_SELECTION:
