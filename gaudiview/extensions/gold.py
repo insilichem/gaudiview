@@ -130,7 +130,7 @@ class GoldModel(GaudiViewBaseModel):
                     lines = f.read().splitlines()
                     j = lines.index('> <Gold.Score>')
                     self.headers = ['Filename'] + lines[j + 1].strip().split()
-                    data = [mol2] + lines[j + 2].split()
+                    data = [mol2] + map(float, lines[j + 2].split())
                     # This the hierarchy requested by tkintertable
                     # Each entry must be tagged by its header, such as:
                     # {row_id(abspath): {column: value, column2: value, ...}}
