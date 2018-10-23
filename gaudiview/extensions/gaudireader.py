@@ -108,7 +108,7 @@ class GaudiModel(GaudiViewBaseModel):
                 elif name.endswith(".yaml"):
                     meta.append(yaml.load(absname))
             z.close()
-            return mol2, meta
+            return sorted(mol2, key=lambda m: m.numAtoms), meta
 
     def details(self, key=None):
         if key:
