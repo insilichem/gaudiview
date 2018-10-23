@@ -170,6 +170,8 @@ class GaudiViewDialog(TangramBaseDialog):
         if self.controller.HAS_MORE_GUI:
             self.controller.extend_gui()
 
+        self.controller._after_ui()
+
     def Apply(self):
         """
         Close unselected entries

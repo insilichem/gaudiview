@@ -67,6 +67,14 @@ class GaudiViewBaseController(object):
         self.HAS_SELECTION = True
         self.HAS_MORE_GUI = False
 
+    def _after_ui(self):
+        self.gui.table.setSelectedRow(0)
+        self.selection_changed(None, None, None)
+        self.gui.table.startcol = 0
+        self.gui.table.startrow = 0
+        self.gui.table.endcol = 0
+        self.gui.table.endrow = 0
+
     def update_selected(self):
         """
         Rebuild list of selected items, which are represented by
