@@ -38,6 +38,6 @@ setup(
         'Operating System :: OS Independent',
         'Topic :: Scientific/Engineering :: Chemistry',
     ],
-    install_requires=['PyYAML==3.11',
+    install_requires=['PyYAML',
                       'tkintertable==1.1.2'],
 )
