@@ -1,0 +1,38 @@
+{% set name = "gaudiview" %}
+
+
+package:
+  name: {{ name|lower }}
+  version: {{ environ.get('GIT_DESCRIBE_TAG', 'v')[1:] }}
+
+source:
+  url: ../
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install . --no-deps -vv"
+
+requirements:
+  host:
+    - python
+  run:
+    - python
+    - pychimera     >=0.2.6
+    - libtangram
+    - tkintertable   1.1.2
+    - pyyaml
+
+about:
+  home: http://github.com/insilichem/gaudiview
+  license: MIT
+  license_family: MIT
+
+  summary: 'UCSF Chimera extension to explore and analyze GaudiMM & GOLD solutions'
+
+  description: |
+    Light interface to explore, view and analyze solutions from GaudiMM
+    and GOLD, inside UCSF Chimera.
+  doc_url: http://tangram-suite.readthedocs.io/en/latest/tangram_gaudiview.html
+  dev_url: https://github.com/insilichem/gaudiview
+
+
