@@ -9,7 +9,7 @@ source:
   path: ../
 
 build:
-  number: 0
+  number: {{ environ.get('GIT_DESCRIBE_NUMBER', '0')|int }}
   script: "{{ PYTHON }} -m pip install . --no-deps -vv"
 
 requirements:
