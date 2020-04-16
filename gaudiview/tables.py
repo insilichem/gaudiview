@@ -11,9 +11,11 @@
 ##############
 
 import sys
+import Pmw
 
 # External dependencies
 import chimera
+from tkinter import *
 from tkintertable.Tables import TableCanvas, ColumnHeader, RowHeader, AutoScrollbar
 from tkintertable.Filtering import *
 from tkintertable.TableModels import TableModel
@@ -419,9 +421,10 @@ class FilterBar_(FilterBar):
                                       initialitem=self.operators[0],
                                       menubutton_width=2)
         operatormenu.grid(row=0, column=2, sticky='news', padx=2, pady=2)
-        self.filtercolvalue = StringVar()
+        self.filtercolvalue = StringVar()        
+        options = {'bg': 'white'} if sys.platform.startswith('linux') else {}
         valsbox = Entry(
-            self, textvariable=self.filtercolvalue, width=20, bg='white')
+            self, textvariable=self.filtercolvalue, width=20, **options)
         valsbox.grid(row=0, column=3, sticky='news', padx=2, pady=2)
         valsbox.bind("<Return>", self.parent.callback)
         valsbox.bind("<KP_Enter>", self.parent.callback)
