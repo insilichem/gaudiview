@@ -10,6 +10,8 @@
 # Web: https://github.com/insilichem/gaudiview
 ##############
 
+import sys
+
 # External dependencies
 import chimera
 from tkintertable.Tables import TableCanvas, ColumnHeader, RowHeader, AutoScrollbar
@@ -360,11 +362,15 @@ class Filters(FilterFrame):
             self, text='Reset', command=self.resetFiltering, state=DISABLED)
         self.cbutton.grid(row=0, column=2, sticky='news', padx=2, pady=2)
         self.resultsvar = IntVar()
+        if sys.platform.startswith('linux'):
+            options = {'disabledforeground': parent.cget('bg')}
+        else:
+            options = {}
         self.results = Label(self, text='Results:', state=DISABLED,
-                             disabledforeground=parent.cget('bg'))
+                             **options)
         self.results.grid(row=0, column=3, sticky='nes')
         self.resultsnum = Label(self, textvariable=self.resultsvar, state=DISABLED,
-                                disabledforeground=parent.cget('bg'))
+                                **options)
         self.resultsnum.grid(row=0, column=4, sticky='nws', padx=2, pady=2)
 
     def addFilterBar(self):
