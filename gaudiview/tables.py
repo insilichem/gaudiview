@@ -15,7 +15,7 @@ import Pmw
 
 # External dependencies
 import chimera
-from tkinter import *
+from Tkinter import *
 from tkintertable.Tables import TableCanvas, ColumnHeader, RowHeader, AutoScrollbar
 from tkintertable.Filtering import *
 from tkintertable.TableModels import TableModel
@@ -23,7 +23,6 @@ from tkintertable.Tables_IO import TableImporter
 
 
 class Table(TableCanvas):
-
     def set_defaults(self):
         """Set default settings"""
         self.cellwidth = 60
@@ -39,24 +38,24 @@ class Table(TableCanvas):
         self.linewidth = 1.0
         self.rowheaderwidth = 0
         self.showkeynamesinheader = False
-        self.thefont = ('Arial', -15)
-        self.cellbackgr = '#EEEEEE'
-        self.entrybackgr = 'white'
-        self.grid_color = '#ABB1AD'
-        self.selectedcolor = 'yellow'
-        self.rowselectedcolor = '#DDDDDD'
-        self.multipleselectioncolor = '#DDDDDD'
-    
+        self.thefont = ("Arial", -15)
+        self.cellbackgr = "#EEEEEE"
+        self.entrybackgr = "white"
+        self.grid_color = "#ABB1AD"
+        self.selectedcolor = "yellow"
+        self.rowselectedcolor = "#DDDDDD"
+        self.multipleselectioncolor = "#DDDDDD"
+
     def adjustColumnWidths(self):
         """Optimally adjust col widths to accomodate the longest entry
             in each column - usually only called  on first redraw"""
-        #self.cols = self.model.getColumnCount()
+        # self.cols = self.model.getColumnCount()
         try:
             fontsize = self.thefont[1]
         except:
             fontsize = self.fontsize
-        dpi = chimera.tkgui.app.winfo_fpixels('1i')/72.0
-        scale = 8.5 * float(abs(fontsize))/(12+2*dpi)
+        dpi = chimera.tkgui.app.winfo_fpixels("1i") / 72.0
+        scale = 8.5 * float(abs(fontsize)) / (12 + 2 * dpi)
         for col in range(self.cols):
             colname = self.model.getColumnName(col)
             if self.model.columnwidths.has_key(colname):
@@ -67,10 +66,10 @@ class Table(TableCanvas):
             size = maxlen * scale
             if size < w:
                 continue
-            #print col, size, self.cellwidth
+            # print col, size, self.cellwidth
             if size >= self.maxcellwidth:
                 size = self.maxcellwidth
-            self.model.columnwidths[colname] = size + float(fontsize)/12*6
+            self.model.columnwidths[colname] = size + float(fontsize) / 12 * 6
         return
 
     def do_bindings(self):
@@ -78,8 +77,8 @@ class Table(TableCanvas):
         self.bind("<Double-Button-1>", self.handle_double_click)
         self.bind("<ButtonRelease-1>", self.handle_left_release)
         self.bind("<MouseWheel>", self.mouse_wheel)
-        self.bind('<Button-4>', self.mouse_wheel)
-        self.bind('<Button-5>', self.mouse_wheel)
+        self.bind("<Button-4>", self.mouse_wheel)
+        self.bind("<Button-5>", self.mouse_wheel)
         self.bind("<Control-Button-1>", self.handle_left_ctrl_click)
         self.bind("<Shift-Button-1>", self.handle_left_shift_click)
         self.bind("<Up>", self.handle_arrow_keys)
@@ -89,7 +88,7 @@ class Table(TableCanvas):
 
     def handle_left_click(self, event):
         self.clearSelected()
-        self.delete('rowrect')
+        self.delete("rowrect")
 
         row = self.get_row_clicked(event)
         col = self.get_col_clicked(event)
@@ -108,20 +107,19 @@ class Table(TableCanvas):
 
     def handle_left_release(self, event):
         self.endrow = self.get_row_clicked(event)
-        self.gaudiparent.triggers.activateTrigger(
-            self.gaudiparent.SELECTION_CHANGED, None)
+        self.gaudiparent.triggers.activateTrigger(self.gaudiparent.SELECTION_CHANGED, None)
 
     def handle_arrow_keys(self, event):
         """Handle arrow keys press"""
         x, y = self.getCanvasPos(self.currentrow, 0)
         if x is None:
             return
-        if event.keysym == 'Up':
+        if event.keysym == "Up":
             if self.currentrow == 0:
                 return
             else:
                 self.currentrow = self.currentrow - 1
-        elif event.keysym == 'Down':
+        elif event.keysym == "Down":
             if self.currentrow >= self.rows - 1:
                 return
             else:
@@ -131,47 +129,41 @@ class Table(TableCanvas):
         self.multiplerowlist.append(self.currentrow)
         self.setSelectedRow(self.currentrow)
         self.drawSelectedRow()
-        self.gaudiparent.triggers.activateTrigger(
-            self.gaudiparent.SELECTION_CHANGED, None)
+        self.gaudiparent.triggers.activateTrigger(self.gaudiparent.SELECTION_CHANGED, None)
 
     def handle_double_click(self, event):
         """Do double click stuff. Selected row/cols will already have
            been set with single click binding"""
 
         row = self.get_row_clicked(event)
-        self.gaudiparent.triggers.activateTrigger(
-            self.gaudiparent.DBL_CLICK, row)
+        self.gaudiparent.triggers.activateTrigger(self.gaudiparent.DBL_CLICK, row)
 
     def handle_ctrl_c(self, event):
         clipboard = []
         for key in self.gaudiparent.controller.selected:
-            clipboard.append('\t'.join(map(str, self.model.data[key].values())))
+            clipboard.append("\t".join(map(str, self.model.data[key].values())))
         self.gaudiparent._toplevel.master.clipboard_clear()
-        self.gaudiparent._toplevel.master.clipboard_append('\n'.join(clipboard))
+        self.gaudiparent._toplevel.master.clipboard_append("\n".join(clipboard))
 
     def createTableFrame(self, callback=None):
-        self.tablerowheader = RowHeader(
-            self.parentframe, self, width=self.rowheaderwidth)
+        self.tablerowheader = RowHeader(self.parentframe, self, width=self.rowheaderwidth)
         self.tablecolheader = Headers(self.parentframe, self, height=self.rowheight)
-        self.Yscrollbar = AutoScrollbar(
-            self.parentframe, orient=VERTICAL, command=self.set_yviews)
-        self.Yscrollbar.grid(
-            row=1, column=2, rowspan=1, sticky='news', pady=0, ipady=0)
+        self.Yscrollbar = AutoScrollbar(self.parentframe, orient=VERTICAL, command=self.set_yviews)
+        self.Yscrollbar.grid(row=1, column=2, rowspan=1, sticky="news", pady=0, ipady=0)
         self.Xscrollbar = AutoScrollbar(
-            self.parentframe, orient=HORIZONTAL, command=self.set_xviews)
-        self.Xscrollbar.grid(row=2, column=1, columnspan=1, sticky='news')
-        self['xscrollcommand'] = self.Xscrollbar.set
-        self['yscrollcommand'] = self.Yscrollbar.set
-        self.tablecolheader['xscrollcommand'] = self.Xscrollbar.set
-        self.tablerowheader['yscrollcommand'] = self.Yscrollbar.set
+            self.parentframe, orient=HORIZONTAL, command=self.set_xviews
+        )
+        self.Xscrollbar.grid(row=2, column=1, columnspan=1, sticky="news")
+        self["xscrollcommand"] = self.Xscrollbar.set
+        self["yscrollcommand"] = self.Yscrollbar.set
+        self.tablecolheader["xscrollcommand"] = self.Xscrollbar.set
+        self.tablerowheader["yscrollcommand"] = self.Yscrollbar.set
         self.parentframe.rowconfigure(1, weight=1)
         self.parentframe.columnconfigure(1, weight=1)
 
-        self.tablecolheader.grid(
-            row=0, column=1, rowspan=1, sticky='news', pady=0, ipady=0)
-        self.tablerowheader.grid(
-            row=1, column=0, rowspan=1, sticky='news', pady=0, ipady=0)
-        self.grid(row=1, column=1, rowspan=1, sticky='news', pady=0, ipady=0)
+        self.tablecolheader.grid(row=0, column=1, rowspan=1, sticky="news", pady=0, ipady=0)
+        self.tablerowheader.grid(row=1, column=0, rowspan=1, sticky="news", pady=0, ipady=0)
+        self.grid(row=1, column=1, rowspan=1, sticky="news", pady=0, ipady=0)
 
         self.adjustColumnWidths()
         self.redrawTable(callback=callback)
@@ -192,9 +184,9 @@ class Table(TableCanvas):
         """Add a filter frame"""
         if parent is None:
             parent = Toplevel()
-            parent.title('Filter Records')
+            parent.title("Filter Records")
             x, y, w, h = self.getGeometry(self.master)
-            parent.geometry('+%s+%s' % (x, y + h))
+            parent.geometry("+%s+%s" % (x, y + h))
         if fields is None:
             fields = self.model.columnNames
 
@@ -241,55 +233,58 @@ class Table(TableCanvas):
         """Draw the highlight rect for the currently selected row"""
         if not row:
             row = self.currentrow
-            self.delete('rowrect')
+            self.delete("rowrect")
 
         x1, y1, x2, y2 = self.getCellCoords(row, 0)
         x2 = self.tablewidth
-        rect = self.create_rectangle(x1, y1, x2, y2,
-                                     fill=self.rowselectedcolor,
-                                     outline=self.rowselectedcolor,
-                                     tag='rowrect')
-        self.lower('rowrect')
-        self.lower('fillrect')
+        rect = self.create_rectangle(
+            x1,
+            y1,
+            x2,
+            y2,
+            fill=self.rowselectedcolor,
+            outline=self.rowselectedcolor,
+            tag="rowrect",
+        )
+        self.lower("rowrect")
+        self.lower("fillrect")
         self.tablerowheader.drawSelectedRows(self.currentrow)
 
     def drawMultipleRows(self, rowlist):
         """Draw more than one row selection"""
-        self.delete('multiplesel')
+        self.delete("multiplesel")
         for r in rowlist:
             if r not in self.visiblerows or r > self.rows - 1:
                 continue
             self.drawSelectedRow(r)
-        self.lower('multiplesel')
-        self.lower('fillrect')
+        self.lower("multiplesel")
+        self.lower("fillrect")
         return
 
 
 class Headers(ColumnHeader):
-
     def __init__(self, parent=None, table=None, width=500, height=20):
-        Canvas.__init__(self, parent, bg='gray25', width=width, height=height)
-        self.thefont = ('Arial', -15)
+        Canvas.__init__(self, parent, bg="gray25", width=width, height=height)
+        self.thefont = ("Arial", -15)
         if table is not None:
             self.table = table
             self.height = height
             self.model = self.table.getModel()
             self.config(width=self.table.width)
             self.columnlabels = self.model.columnlabels
-            self.bind('<Button-1>', self.handle_left_click)
+            self.bind("<Button-1>", self.handle_left_click)
             self.bind("<ButtonRelease-1>", self.handle_left_release)
-            self.bind('<B1-Motion>', self.handle_mouse_drag)
-            self.bind('<Motion>', self.handle_mouse_move)
+            self.bind("<B1-Motion>", self.handle_mouse_drag)
+            self.bind("<Motion>", self.handle_mouse_move)
             self.thefont = self.table.thefont
-            self.reversedcols = dict((colname_, 0)
-                                     for colname_ in self.model.columnNames)
+            self.reversedcols = dict((colname_, 0) for colname_ in self.model.columnNames)
         return
 
     def handle_left_click(self, event):
         """Does cell selection when mouse is clicked on canvas"""
-        self.delete('rect')
-        self.table.delete('entry')
-        self.table.delete('multicellrect')
+        self.delete("rect")
+        self.table.delete("entry")
+        self.table.delete("multicellrect")
         colclicked = self.table.get_col_clicked(event)
         if colclicked is None:
             return
@@ -301,16 +296,15 @@ class Headers(ColumnHeader):
             return
         # also draw a copy of the rect to be dragged
         self.draggedcol = None
-        self.drawRect(self.table.currentcol, tag='dragrect',
-                      color='red', outline='white')
-        if hasattr(self, 'rightmenu'):
+        self.drawRect(self.table.currentcol, tag="dragrect", color="red", outline="white")
+        if hasattr(self, "rightmenu"):
             self.rightmenu.destroy()
 
     def handle_left_release(self, event):
         """When mouse released implement resize or col move"""
-        self.delete('dragrect')
+        self.delete("dragrect")
         if self.atdivider == 1:
-            #col = self.table.get_col_clicked(event)
+            # col = self.table.get_col_clicked(event)
             x = int(self.canvasx(event.x))
             col = self.table.currentcol
             x1, y1, x2, y2 = self.table.getCellCoords(0, col)
@@ -318,12 +312,12 @@ class Headers(ColumnHeader):
             if newwidth < 5:
                 newwidth = 5
             self.table.resizeColumn(col, newwidth)
-            self.table.delete('resizeline')
-            self.delete('resizeline')
-            self.delete('resizesymbol')
+            self.table.delete("resizeline")
+            self.delete("resizeline")
+            self.delete("resizesymbol")
             self.atdivider = 0
             return
-        self.delete('resizesymbol')
+        self.delete("resizesymbol")
         # move column
         if self.draggedcol is not None and self.table.currentcol != self.draggedcol:
             self.model.moveColumn(self.table.currentcol, self.draggedcol)
@@ -335,8 +329,9 @@ class Headers(ColumnHeader):
                 former_selected_row = -1
             sortkey = self.model.getColumnName(self.table.currentcol)
             self.reversedcols[sortkey] = not self.reversedcols[sortkey]
-            self.columnlabels[sortkey] = '{} {}'.format((u'\u25B2', u'\u25BC')[int(self.reversedcols[sortkey])],
-                                                        sortkey)
+            self.columnlabels[sortkey] = "{} {}".format(
+                (u"\u25B2", u"\u25BC")[int(self.reversedcols[sortkey])], sortkey
+            )
             self.table.sortTable(self.table.currentcol, reverse=self.reversedcols[sortkey])
             self.table.currentrow = self.table.model.getRecordIndex(former_selected_row)
             self.table.drawSelectedRow()
@@ -344,7 +339,6 @@ class Headers(ColumnHeader):
 
 
 class Filters(FilterFrame):
-
     def __init__(self, parent, fields, callback=None, closecallback=None):
         """Create a filtering gui frame.
         Callback must be some method that can accept tuples of filter
@@ -355,33 +349,28 @@ class Filters(FilterFrame):
         self.closecallback = closecallback
         self.fields = fields
         self.filters = []
-        self.gobutton = Button(
-            self, text='Filter', command=self.callback, state=DISABLED)
-        self.gobutton.grid(row=0, column=0, sticky='news', padx=2, pady=2)
-        addbutton = Button(self, text='+Add', command=self.addFilterBar)
-        addbutton.grid(row=0, column=1, sticky='news', padx=2, pady=2)
-        self.cbutton = Button(
-            self, text='Reset', command=self.resetFiltering, state=DISABLED)
-        self.cbutton.grid(row=0, column=2, sticky='news', padx=2, pady=2)
+        self.gobutton = Button(self, text="Filter", command=self.callback, state=DISABLED)
+        self.gobutton.grid(row=0, column=0, sticky="news", padx=2, pady=2)
+        addbutton = Button(self, text="+Add", command=self.addFilterBar)
+        addbutton.grid(row=0, column=1, sticky="news", padx=2, pady=2)
+        self.cbutton = Button(self, text="Reset", command=self.resetFiltering, state=DISABLED)
+        self.cbutton.grid(row=0, column=2, sticky="news", padx=2, pady=2)
         self.resultsvar = IntVar()
-        if sys.platform.startswith('linux'):
-            options = {'disabledforeground': parent.cget('bg')}
+        if sys.platform.startswith("linux"):
+            options = {"disabledforeground": parent.cget("bg")}
         else:
             options = {}
-        self.results = Label(self, text='Results:', state=DISABLED,
-                             **options)
-        self.results.grid(row=0, column=3, sticky='nes')
-        self.resultsnum = Label(self, textvariable=self.resultsvar, state=DISABLED,
-                                **options)
-        self.resultsnum.grid(row=0, column=4, sticky='nws', padx=2, pady=2)
+        self.results = Label(self, text="Results:", state=DISABLED, **options)
+        self.results.grid(row=0, column=3, sticky="nes")
+        self.resultsnum = Label(self, textvariable=self.resultsvar, state=DISABLED, **options)
+        self.resultsnum.grid(row=0, column=4, sticky="nws", padx=2, pady=2)
 
     def addFilterBar(self):
         """Add filter"""
         index = len(self.filters)
         f = FilterBar_(self, index, self.fields)
         self.filters.append(f)
-        f.grid(row=index + 1, column=0, columnspan=5,
-               sticky='news', padx=2, pady=2)
+        f.grid(row=index + 1, column=0, columnspan=5, sticky="news", padx=2, pady=2)
         self.gobutton.config(state=NORMAL)
         self.cbutton.config(state=NORMAL)
 
@@ -399,8 +388,9 @@ class Filters(FilterFrame):
 class FilterBar_(FilterBar):
 
     """Class providing filter widgets"""
-    operators = ['=', '!=', '>', '<', '>=', '<=', 'contains']
-    booleanops = ['AND', 'OR', 'NOT']
+
+    operators = ["=", "!=", ">", "<", ">=", "<=", "contains"]
+    booleanops = ["AND", "OR", "NOT"]
 
     def __init__(self, parent, index, fields):
         Frame.__init__(self, parent)
@@ -408,38 +398,43 @@ class FilterBar_(FilterBar):
         self.index = index
         self.filtercol = StringVar()
         initial = fields[0]
-        filtercolmenu = Pmw.OptionMenu(self,
-                                       menubutton_textvariable=self.filtercol,
-                                       items=fields,
-                                       initialitem=initial,
-                                       menubutton_width=10)
-        filtercolmenu.grid(row=0, column=1, sticky='news', padx=2, pady=2)
+        filtercolmenu = Pmw.OptionMenu(
+            self,
+            menubutton_textvariable=self.filtercol,
+            items=fields,
+            initialitem=initial,
+            menubutton_width=10,
+        )
+        filtercolmenu.grid(row=0, column=1, sticky="news", padx=2, pady=2)
         self.operator = StringVar()
-        operatormenu = Pmw.OptionMenu(self,
-                                      menubutton_textvariable=self.operator,
-                                      items=self.operators,
-                                      initialitem=self.operators[0],
-                                      menubutton_width=2)
-        operatormenu.grid(row=0, column=2, sticky='news', padx=2, pady=2)
-        self.filtercolvalue = StringVar()        
-        options = {'bg': 'white'} if sys.platform.startswith('linux') else {}
-        valsbox = Entry(
-            self, textvariable=self.filtercolvalue, width=20, **options)
-        valsbox.grid(row=0, column=3, sticky='news', padx=2, pady=2)
+        operatormenu = Pmw.OptionMenu(
+            self,
+            menubutton_textvariable=self.operator,
+            items=self.operators,
+            initialitem=self.operators[0],
+            menubutton_width=2,
+        )
+        operatormenu.grid(row=0, column=2, sticky="news", padx=2, pady=2)
+        self.filtercolvalue = StringVar()
+        options = {"bg": "white"} if sys.platform.startswith("linux") else {}
+        valsbox = Entry(self, textvariable=self.filtercolvalue, width=20, **options)
+        valsbox.grid(row=0, column=3, sticky="news", padx=2, pady=2)
         valsbox.bind("<Return>", self.parent.callback)
         valsbox.bind("<KP_Enter>", self.parent.callback)
         self.booleanop = StringVar()
-        booleanopmenu = Pmw.OptionMenu(self,
-                                       menubutton_textvariable=self.booleanop,
-                                       items=self.booleanops,
-                                       initialitem='AND',
-                                       menubutton_width=6)
-        booleanopmenu.grid(row=0, column=0, sticky='news', padx=2, pady=2)
+        booleanopmenu = Pmw.OptionMenu(
+            self,
+            menubutton_textvariable=self.booleanop,
+            items=self.booleanops,
+            initialitem="AND",
+            menubutton_width=6,
+        )
+        booleanopmenu.grid(row=0, column=0, sticky="news", padx=2, pady=2)
         # disable the boolean operator if it's the first filter
         if self.index == 0:
-            booleanopmenu.component('menubutton').configure(state=DISABLED)
-        cbutton = Button(self, text='-', command=self.close)
-        cbutton.grid(row=0, column=5, sticky='news', padx=2, pady=2)
+            booleanopmenu.component("menubutton").configure(state=DISABLED)
+        cbutton = Button(self, text="-", command=self.close)
+        cbutton.grid(row=0, column=5, sticky="news", padx=2, pady=2)
 
     def close(self):
         """Destroy and remove from parent"""
@@ -453,8 +448,7 @@ class FilterBar_(FilterBar):
 
 
 class OrderedTableImporter(TableImporter):
-
-    def ImportTableModel(self, filename, sep=','):
+    def ImportTableModel(self, filename, sep=","):
         from collections import OrderedDict
         import os
         import csv
@@ -464,6 +458,5 @@ class OrderedTableImporter(TableImporter):
         dictreader = csv.DictReader(open(filename, "rb"), delimiter=sep)
         dictdata = OrderedDict()
         for i, rec in enumerate(dictreader):
-            dictdata[i] = OrderedDict((f, rec[f])
-                                      for f in dictreader.fieldnames)
+            dictdata[i] = OrderedDict((f, rec[f]) for f in dictreader.fieldnames)
         return dictdata
