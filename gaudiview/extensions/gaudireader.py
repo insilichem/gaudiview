@@ -98,7 +98,7 @@ class GaudiModel(GaudiViewBaseModel):
             subid = 0
             for name in os.listdir(tmp):
                 absname = os.path.join(tmp, name)
-                if name.endswith(".mol2"):
+                if name.endswith(".mol2") or name.endswith(".pdb"):
                     mol2.extend(
                         m for m in chimera.openModels.open(absname, baseId=self.index,
                                                            subid=subid,
